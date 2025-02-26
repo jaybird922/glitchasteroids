@@ -1,0 +1,2894 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Glitch Asteroids Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #0f8;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: linear-gradient(rgba(0,15,8,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,15,8,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .game-area {
+            display: flex;
+            align-items: flex-start;
+            position: relative;
+        }
+        canvas {
+            border: 2px solid #0f8;
+            background-color: #000;
+            box-shadow: 0 0 10px #0f8, 0 0 20px rgba(0, 255, 136, 0.5);
+            image-rendering: pixelated;
+        }
+        .game-container {
+            position: relative;
+        }
+        .score-display {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 18px;
+            color: #0f8;
+            text-shadow: 0 0 5px #0f8;
+            font-weight: bold;
+        }
+        .lives-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            color: #f0f;
+            text-shadow: 0 0 5px #f0f;
+            font-weight: bold;
+        }
+        .shield-display {
+            position: absolute;
+            top: 40px;
+            right: 10px;
+            font-size: 18px;
+            color: #0ff;
+            text-shadow: 0 0 5px #0ff;
+            font-weight: bold;
+        }
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            font-weight: bold;
+            display: none;
+            color: #f00;
+            text-shadow: 0 0 10px #f00, 0 0 20px #f00, 0 0 30px #f00;
+            letter-spacing: 5px;
+            animation: glitch 0.5s linear infinite;
+        }
+        @keyframes glitch {
+            0% { transform: translate(-50%, -50%) skew(0deg); }
+            20% { transform: translate(-51%, -50%) skew(1deg); }
+            40% { transform: translate(-49%, -50%) skew(-1deg); }
+            60% { transform: translate(-50%, -51%) skew(-0.5deg); }
+            80% { transform: translate(-50%, -49%) skew(0.5deg); }
+            100% { transform: translate(-50%, -50%) skew(0deg); }
+        }
+        .side-panel {
+            width: 200px;
+            padding: 20px;
+            margin-left: 20px;
+            border: 2px solid #0f8;
+            background-color: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 10px #0f8, 0 0 20px rgba(0, 255, 136, 0.3);
+            overflow: auto;
+            max-height: 600px;
+            font-size: 14px;
+        }
+        .side-panel h2 {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            color: #0f8;
+            text-shadow: 0 0 5px #0f8;
+            letter-spacing: 2px;
+            animation: flicker 3s infinite alternate;
+        }
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+            20%, 24%, 55% { opacity: 0.5; }
+        }
+        .side-panel p {
+            margin: 10px 0;
+            position: relative;
+        }
+        .key {
+            display: inline-block;
+            background-color: #000;
+            border: 1px solid #0f8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 5px;
+            color: #0f8;
+            box-shadow: 0 0 5px #0f8;
+        }
+        .highscores-panel {
+            width: 200px;
+            padding: 20px;
+            margin-right: 20px;
+            border: 2px solid #0f8;
+            background-color: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 10px #0f8, 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        .highscores-panel h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #0f8;
+            text-shadow: 0 0 5px #0f8;
+            letter-spacing: 2px;
+            animation: flicker 3s infinite alternate;
+        }
+        .highscore-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dotted #0f8;
+            padding: 3px 0;
+            color: #0f8;
+        }
+        .highscore-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 120px;
+        }
+        .modal {
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: staticNoise 0.1s steps(10) infinite;
+        }
+        @keyframes staticNoise {
+            0%, 100% { background-color: rgba(0, 0, 0, 0.8); }
+            10% { background-color: rgba(0, 0, 0, 0.7); }
+            20% { background-color: rgba(0, 0, 0, 0.9); }
+            30% { background-color: rgba(0, 0, 0, 0.8); }
+            40% { background-color: rgba(0, 0, 0, 0.7); }
+            50% { background-color: rgba(0, 0, 0, 0.85); }
+            60% { background-color: rgba(0, 0, 0, 0.9); }
+            70% { background-color: rgba(0, 0, 0, 0.8); }
+            80% { background-color: rgba(0, 0, 0, 0.75); }
+            90% { background-color: rgba(0, 0, 0, 0.85); }
+        }
+        .modal-content {
+            background-color: #000;
+            padding: 20px;
+            border: 2px solid #0f8;
+            box-shadow: 0 0 20px #0f8, 0 0 30px rgba(0, 255, 136, 0.5);
+            width: 300px;
+            text-align: center;
+            position: relative;
+        }
+        .modal-content::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 49.5%, #0f8 49.5%, #0f8 50.5%, transparent 50.5%);
+            background-size: 4px 4px;
+            pointer-events: none;
+            opacity: 0.1;
+        }
+        .modal-content h2 {
+            color: #0f8;
+            text-shadow: 0 0 5px #0f8;
+            animation: flicker 2s infinite alternate;
+        }
+        .modal-content input {
+            width: 80%;
+            padding: 10px;
+            margin: 15px 0;
+            background-color: #000;
+            border: 1px solid #0f8;
+            box-shadow: 0 0 5px #0f8;
+            color: #0f8;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        }
+        .modal-content button {
+            padding: 8px 20px;
+            background-color: #000;
+            color: #0f8;
+            border: 1px solid #0f8;
+            box-shadow: 0 0 5px #0f8;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+        .modal-content button:hover {
+            background-color: #0f8;
+            color: #000;
+        }
+        .special-meter {
+            position: absolute;
+            top: 100px;
+            left: 10px;
+            width: 150px;
+            height: 10px;
+            background-color: #000;
+            border: 1px solid #f0f;
+            box-shadow: 0 0 5px #f0f;
+        }
+        .special-meter-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #f0f;
+            box-shadow: 0 0 5px #f0f;
+        }
+        .special-meter-label {
+            position: absolute;
+            top: 85px;
+            left: 10px;
+            font-size: 14px;
+            color: #f0f;
+            text-shadow: 0 0 5px #f0f;
+            font-weight: bold;
+        }
+        .reset-prompt {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #999;
+        }
+        .confirm-modal {
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .confirm-content {
+            background-color: #000;
+            padding: 20px;
+            border: 2px solid #f00;
+            box-shadow: 0 0 20px #f00;
+            width: 300px;
+            text-align: center;
+        }
+        .confirm-content h2 {
+            color: #f00;
+            text-shadow: 0 0 5px #f00;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .confirm-content button {
+            padding: 8px 20px;
+            background-color: #000;
+            border: 1px solid #f00;
+            color: #f00;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        .confirm-content button:hover {
+            background-color: #f00;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-area">
+        <div class="highscores-panel">
+            <h2>HIGH SCORES</h2>
+            <div id="highscores-list">
+                <!-- Highscores will be populated here -->
+            </div>
+            <div class="reset-prompt">Press T to reset leaderboard (when not in game)</div>
+        </div>
+        <div class="game-container">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <div class="score-display">Score: <span id="score">0</span></div>
+            <div class="lives-display">Lives: <span id="lives">3</span></div>
+            <div class="shield-display">Shield: <span id="shield">100</span>%</div>
+            <div class="special-meter">
+                <div class="special-meter-fill" id="special-meter-fill"></div>
+            </div>
+            <div class="special-meter-label">Special: <span id="special-meter-text">Ready</span></div>
+            <div class="game-over" id="gameOver">GAME OVER</div>
+        </div>
+        <div class="side-panel">
+            <h2>CONTROLS</h2>
+            <p><span class="key">W</span> / <span class="key">↑</span> Thrust</p>
+            <p><span class="key">A</span> / <span class="key">←</span> Rotate Left</p>
+            <p><span class="key">D</span> / <span class="key">→</span> Rotate Right</p>
+            <p><span class="key">Space</span> Fire</p>
+            <p><span class="key">Shift</span> Shield</p>
+            <p><span class="key">F</span> Special Attack</p>
+            <p><span class="key">R</span> Restart Game</p>
+            <p><span class="key">T</span> Reset High Scores</p>
+            <h2>POWERUPS</h2>
+            <p><span style="color: #ff0; text-shadow: 0 0 5px #ff0;">W</span> - Weapon Upgrade</p>
+            <p><span style="color: #0f0; text-shadow: 0 0 5px #0f0;">E</span> - Energy + Weapon Time</p>
+            <h2>SPECIAL ATTACK</h2>
+            <p>Press <span class="key">F</span> to use a powerful special attack that damages all asteroids and reduces their speed!</p>
+            <p>- Costs one weapon level</p>
+            <p>- More powerful at higher weapon levels</p>
+            <p>- Requires weapon level 2+</p>
+        </div>
+    </div>
+    
+    <div id="highscore-modal" class="modal">
+        <div class="modal-content">
+            <h2>NEW HIGH SCORE!</h2>
+            <p>Your score: <span id="final-score"></span></p>
+            <p>Enter your name:</p>
+            <input type="text" id="player-name" maxlength="15" placeholder="Your Name">
+            <button id="save-score">SAVE SCORE</button>
+        </div>
+    </div>
+
+    <div id="confirm-reset-modal" class="confirm-modal">
+        <div class="confirm-content">
+            <h2>RESET HIGH SCORES?</h2>
+            <p>This will permanently delete all high scores.</p>
+            <div class="button-container">
+                <button id="confirm-reset">YES, RESET</button>
+                <button id="cancel-reset">CANCEL</button>
+            </div>
+        </div>
+    </div>
+	<script>
+        // Game initialization
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const shieldElement = document.getElementById('shield');
+        const gameOverElement = document.getElementById('gameOver');
+        const specialMeterFill = document.getElementById('special-meter-fill');
+        const specialMeterText = document.getElementById('special-meter-text');
+        const highscoresList = document.getElementById('highscores-list');
+        const highscoreModal = document.getElementById('highscore-modal');
+        const finalScoreElement = document.getElementById('final-score');
+        const playerNameInput = document.getElementById('player-name');
+        const saveScoreButton = document.getElementById('save-score');
+        const confirmResetModal = document.getElementById('confirm-reset-modal');
+        const confirmResetButton = document.getElementById('confirm-reset');
+        const cancelResetButton = document.getElementById('cancel-reset');
+
+        // Game variables
+        let score = 0;
+        let lives = 3;
+        let gameOver = false;
+        let level = 1;
+        let asteroidSpeed = 1;
+        let gameLoopId = null;
+        let specialAttackReady = true;
+        let specialAttackCooldown = 0;
+        let highScores = [];
+        let enteringHighScore = false; // Track if player is entering a high score
+        
+        // Weapon variables
+        let weaponLevel = 1;
+        let weaponTimer = 0;
+        let lastFireTime = 0;
+        const fireRate = 200; // milliseconds between shots
+        
+        // Shield variables
+        let shieldEnergy = 100;
+        let shieldActive = false;
+        let shieldRadius = 30;
+        let shieldDrainRate = 0.3; // Reduced drain rate
+
+        // Asteroid health scaling variables
+        let baseAsteroidHealth = {
+            large: 4,   // Increased from 3 to 4
+            medium: 3,  // Increased from 2 to 3
+            small: 1    // Small asteroids still have 1 health
+        };
+        
+        // Health scaling rate per level - increased to make asteroids more durable
+        let healthScalingRate = 0.8; // Increased from 0.5 to 0.8
+
+        // Weapon damage scaling (new variable to better balance weapon vs asteroid health)
+        let weaponDamageMultiplier = {
+            1: 1.0,  // Level 1 weapon does base damage
+            2: 1.2,  // Level 2 weapon does 20% more damage
+            3: 1.4,  // Level 3 weapon does 40% more damage
+            4: 1.6,  // Level 4 weapon does 60% more damage
+            5: 1.8,  // Level 5 weapon does 80% more damage
+            6: 2.0   // Level 6 weapon does double damage
+        };
+
+        // Glitch effect variables
+        let glitchIntensity = 0;
+        let glitchTimer = 0;
+        let screenShakeIntensity = 0;
+        let screenShakeDecay = 0.9;
+        let staticNoiseLevel = 0;
+        let colorShiftAmount = 0;
+        let lastFrameTime = 0;
+        let deltaTime = 0;
+        
+        // Color palettes for glitch effects
+        const glitchColors = {
+            primary: '#0f8',       // Bright green
+            secondary: '#f0f',     // Magenta  
+            tertiary: '#0ff',      // Cyan
+            alert: '#f00',         // Red
+            highlight: '#ff0',     // Yellow
+            dark: '#000',          // Black
+            light: '#fff'          // White
+        };
+
+        // Different fill colors for asteroids
+        const asteroidFillColors = [
+            '0, 255, 136',  // Green
+            '255, 0, 255',  // Magenta
+            '0, 255, 255',  // Cyan
+            '255, 255, 0',  // Yellow
+            '255, 100, 50'  // Orange-ish
+        ];
+
+        // Key state tracking
+        const keys = {
+            ArrowUp: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+            Space: false,
+            ShiftLeft: false,
+            ShiftRight: false,
+            KeyW: false,
+            KeyA: false,
+            KeyD: false,
+            KeyR: false,
+            KeyF: false,
+            KeyT: false
+        };
+
+        // Game objects
+        const ship = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 15,
+            angle: 0,
+            rotation: 0,
+            thrusting: false,
+            thrust: {
+                x: 0,
+                y: 0
+            },
+            invulnerable: false,
+            invulnerableTime: 0,
+            glitchOffset: { x: 0, y: 0 } // For glitch effect
+        };
+
+        let asteroids = [];
+        let bullets = [];
+        let particles = [];
+        let powerups = [];
+        let floatingTexts = [];
+        let specialEffects = [];
+        let glitchEffects = [];
+        
+        // Calculate asteroid health based on level and size
+        function calculateAsteroidHealth(size, level) {
+            let baseHealth;
+            
+            // Determine base health from size
+            if (size === 3) { // Large
+                baseHealth = baseAsteroidHealth.large;
+            } else if (size === 2) { // Medium
+                baseHealth = baseAsteroidHealth.medium;
+            } else { // Small
+                baseHealth = baseAsteroidHealth.small;
+            }
+            
+            // Improved scaling formula to ensure health increases more consistently with level
+            // We use Math.floor for predictable integer health values
+            const levelFactor = Math.max(1, Math.floor((level - 1) * healthScalingRate));
+            const scaledHealth = baseHealth + levelFactor;
+            
+            // Ensure a minimum health of 1
+            return Math.max(1, scaledHealth);
+        }
+        
+        // Calculate weapon damage based on weapon level
+        function calculateWeaponDamage(weaponLevel) {
+            // Get the damage multiplier for this weapon level
+            const multiplier = weaponDamageMultiplier[weaponLevel] || 1.0;
+            
+            // Base damage is 1, scaled by the multiplier
+            // For most levels this will be the integer weapon level
+            // But we're using the multiplier for more control
+            return Math.max(1, Math.round(multiplier));
+        }
+		// Load high scores from local storage
+        function loadHighScores() {
+            const storedScores = localStorage.getItem('asteroidsHighScores');
+            if (storedScores) {
+                highScores = JSON.parse(storedScores);
+            } else {
+                // Default high scores if none exist
+                highScores = [
+                    { name: "GL1TCH", score: 10000 },
+                    { name: "CYB3R", score: 8000 },
+                    { name: "H4CK3R", score: 6000 },
+                    { name: "M4TR1X", score: 4000 },
+                    { name: "V1RUS", score: 2000 }
+                ];
+                saveHighScores();
+            }
+            displayHighScores();
+        }
+        
+        // Save high scores to local storage
+        function saveHighScores() {
+            localStorage.setItem('asteroidsHighScores', JSON.stringify(highScores));
+        }
+        
+        // Reset high scores
+        function resetHighScores() {
+            // Only allow resetting when not in a game AND not entering a high score
+            if ((gameOver || !gameLoopId) && !enteringHighScore) {
+                // Set default high scores
+                highScores = [
+                    { name: "GL1TCH", score: 10000 },
+                    { name: "CYB3R", score: 8000 },
+                    { name: "H4CK3R", score: 6000 },
+                    { name: "M4TR1X", score: 4000 },
+                    { name: "V1RUS", score: 2000 }
+                ];
+                
+                // Save to local storage
+                saveHighScores();
+                
+                // Update the display
+                displayHighScores();
+                
+                // Provide feedback
+                createFloatingText(canvas.width / 2, canvas.height / 2, "HIGH SCORES RESET", 120, glitchColors.alert, 30);
+                createGlitchEffect(60, 3);
+            } else if (enteringHighScore) {
+                // If entering high score, show message that reset is not allowed
+                createFloatingText(
+                    canvas.width / 2, 
+                    canvas.height / 2, 
+                    "CANNOT RESET WHILE ENTERING HIGH SCORE", 
+                    90, 
+                    glitchColors.alert, 
+                    20
+                );
+            } else {
+                // If in game, show message that reset is only allowed when not playing
+                createFloatingText(
+                    canvas.width / 2, 
+                    canvas.height / 2, 
+                    "RESET ONLY AVAILABLE WHEN NOT IN GAME", 
+                    90, 
+                    glitchColors.alert, 
+                    20
+                );
+            }
+        }
+        
+        // Confirm reset high scores
+        function showResetConfirmation() {
+            // Only show confirmation when not in a game AND not entering a high score
+            if ((gameOver || !gameLoopId) && !enteringHighScore) {
+                confirmResetModal.style.display = 'flex';
+            } else if (enteringHighScore) {
+                // If entering high score, show message that reset is not allowed
+                createFloatingText(
+                    canvas.width / 2, 
+                    canvas.height / 2, 
+                    "CANNOT RESET WHILE ENTERING HIGH SCORE", 
+                    90, 
+                    glitchColors.alert, 
+                    20
+                );
+            } else {
+                // If in game, show message that reset is only allowed when not playing
+                createFloatingText(
+                    canvas.width / 2, 
+                    canvas.height / 2, 
+                    "RESET ONLY AVAILABLE WHEN NOT IN GAME", 
+                    90, 
+                    glitchColors.alert, 
+                    20
+                );
+            }
+        }
+        
+        // Display high scores on the panel
+        function displayHighScores() {
+            // Clear the current list
+            highscoresList.innerHTML = '';
+            
+            // Sort high scores (highest first)
+            highScores.sort((a, b) => b.score - a.score);
+            
+            // Display top 10 scores
+            const topScores = highScores.slice(0, 10);
+            
+            topScores.forEach((entry, index) => {
+                const scoreRow = document.createElement('div');
+                scoreRow.className = 'highscore-row';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'highscore-name';
+                nameSpan.textContent = `${index + 1}. ${entry.name}`;
+                
+                const scoreSpan = document.createElement('span');
+                scoreSpan.textContent = entry.score;
+                
+                scoreRow.appendChild(nameSpan);
+                scoreRow.appendChild(scoreSpan);
+                
+                highscoresList.appendChild(scoreRow);
+            });
+        }
+        
+        // Create a glitch effect
+        function createGlitchEffect(duration = 30, intensity = 1) {
+            glitchIntensity = Math.min(glitchIntensity + intensity, 5);
+            glitchTimer = Math.max(glitchTimer, duration);
+            
+            // Add screen shake
+            screenShakeIntensity = intensity * 5;
+            
+            // Increase static noise
+            staticNoiseLevel = Math.min(staticNoiseLevel + intensity * 0.2, 0.3);
+            
+            // Add color shift
+            colorShiftAmount = Math.min(colorShiftAmount + intensity * 2, 10);
+        }
+        
+        // Create floating text
+        function createFloatingText(x, y, text, lifespan = 60, color = glitchColors.light, size = 18) {
+            floatingTexts.push({
+                x: x,
+                y: y,
+                text: text,
+                life: lifespan,
+                alpha: 1,
+                yVel: -1, // Float upward
+                color: color,
+                size: size,
+                glitchIntensity: 0.5 + Math.random() * 0.5, // Random glitch effect
+                scanlineOffset: Math.random() * 5
+            });
+        }
+        
+        // Create explosion particles
+        function createParticles(x, y, count, color) {
+            for (let i = 0; i < count; i++) {
+                const speed = Math.random() * 3 + 1;
+                const angle = Math.random() * Math.PI * 2;
+                const pixelSize = Math.floor(Math.random() * 3) + 1; // Pixelated particles
+                
+                particles.push({
+                    x: x,
+                    y: y,
+                    xv: speed * Math.cos(angle),
+                    yv: speed * Math.sin(angle),
+                    radius: Math.random() * 3 + 1,
+                    life: Math.floor(Math.random() * 30 + 30),
+                    color: color || glitchColors.light,
+                    pixelSize: pixelSize,
+                    isSquare: Math.random() < 0.3, // Some particles are square
+                    glitchOffset: { x: 0, y: 0 }
+                });
+            }
+        }
+        
+        // Create digital distortion particles
+        function createDigitalParticles(x, y, count, color) {
+            for (let i = 0; i < count; i++) {
+                const size = Math.floor(Math.random() * 4) + 1;
+                const speed = Math.random() * 2 + 0.5;
+                const angle = Math.random() * Math.PI * 2;
+                const life = Math.floor(Math.random() * 20 + 10);
+                
+                // Create digital looking particle
+                particles.push({
+                    x: x + (Math.random() * 20 - 10),
+                    y: y + (Math.random() * 20 - 10),
+                    xv: speed * Math.cos(angle),
+                    yv: speed * Math.sin(angle),
+                    width: size,
+                    height: Math.floor(Math.random() * 10) + 2, // Rectangle height
+                    life: life,
+                    color: color || glitchColors.primary,
+                    isDigital: true,
+                    alpha: Math.random() * 0.5 + 0.5
+                });
+            }
+        }
+        
+        // Create engine particles - Glitch version
+        function createEngineParticles(ship) {
+            // Base position behind the ship
+            const baseX = ship.x - Math.cos(ship.angle) * ship.radius;
+            const baseY = ship.y + Math.sin(ship.angle) * ship.radius;
+            
+            // Determine thrust color based on ship state
+            let thrustColor;
+            if (ship.invulnerable) {
+                thrustColor = glitchColors.tertiary; // Cyan for invulnerable
+            } else if (shieldActive) {
+                thrustColor = glitchColors.primary; // Green for shield active
+            } else {
+                // Create a flickering flame effect with different colors
+                const flicker = Math.random();
+                if (flicker < 0.3) {
+                    thrustColor = '#f84'; // Orange
+                } else if (flicker < 0.6) {
+                    thrustColor = glitchColors.highlight; // Yellow
+                } else if (flicker < 0.8) {
+                    thrustColor = '#f42'; // Red-orange
+                } else {
+                    thrustColor = glitchColors.light; // White hot center
+                }
+            }
+            
+            // Create pixelated thrust particles
+            for (let i = 0; i < 3; i++) { // More particles for glitch effect
+                // Add some variance to positions
+                const spread = (Math.random() - 0.5) * ship.radius * 0.8;
+                const offsetX = baseX + spread * Math.sin(ship.angle);
+                const offsetY = baseY + spread * Math.cos(ship.angle);
+                
+                // Speed variance for dynamic effect
+                const speedVariance = Math.random() * 2 + 1;
+                const pixelSize = Math.floor(Math.random() * 3) + 1;
+                
+                // Create the particle
+                particles.push({
+                    x: offsetX,
+                    y: offsetY,
+                    xv: -Math.cos(ship.angle) * speedVariance,
+                    yv: Math.sin(ship.angle) * speedVariance,
+                    radius: Math.random() * 2 + 1,
+                    pixelSize: pixelSize,
+                    life: Math.floor(Math.random() * 20 + 10),
+                    color: thrustColor,
+                    isSquare: Math.random() < 0.4, // Some thrust particles are square
+                    glitchOffset: { x: 0, y: 0 }
+                });
+                
+                // Occasionally add digital looking particles
+                if (Math.random() < 0.1) {
+                    createDigitalParticles(offsetX, offsetY, 1, thrustColor);
+                }
+            }
+        }
+        
+        // Update special attack meter display
+        function updateSpecialMeter() {
+            // FIX: Updated logic to correctly show status based on conditions
+            if (weaponLevel < 2) {
+                // Need higher weapon level
+                specialMeterFill.style.width = '0%';
+                specialMeterText.textContent = 'Need Weapon Lvl 2+';
+            } else if (specialAttackReady) {
+                // Special attack is ready
+                specialMeterFill.style.width = '100%';
+                specialMeterText.textContent = 'Ready';
+            } else {
+                // Special attack is recharging
+                const percentage = Math.floor((300 - specialAttackCooldown) / 300 * 100);
+                specialMeterFill.style.width = `${percentage}%`;
+                specialMeterText.textContent = 'Recharging';
+            }
+        }
+        
+        // Function to display current asteroid speed
+        function displayAsteroidSpeed() {
+            ctx.fillStyle = glitchColors.primary;
+            ctx.font = '14px "Courier New", monospace';
+            ctx.shadowColor = glitchColors.primary;
+            ctx.shadowBlur = 5;
+            
+            // Display below the level indicator in bottom left
+            ctx.fillText(`Asteroid Speed: ${asteroidSpeed.toFixed(2)}x`, 10, canvas.height - 30);
+            ctx.fillText(`Asteroid Health Scaling: ${(healthScalingRate * 100).toFixed(0)}%`, 10, canvas.height - 50);
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+        }
+        
+        // Check for high score
+        function checkHighScore() {
+            // If there are fewer than 10 scores, or the current score is higher than the lowest score
+            if (highScores.length < 10 || score > highScores[highScores.length - 1].score) {
+                // Set flag that player is entering high score
+                enteringHighScore = true;
+                
+                // Display the high score modal
+                finalScoreElement.textContent = score;
+                highscoreModal.style.display = 'flex';
+                
+                // Set focus on the input
+                setTimeout(() => {
+                    playerNameInput.focus();
+                }, 100);
+                
+                return true;
+            }
+            return false;
+        }
+        
+        // Save the player's score
+        function savePlayerScore() {
+            const playerName = playerNameInput.value.trim() || 'Anonymous';
+            
+            // Add the new score
+            highScores.push({
+                name: playerName,
+                score: score
+            });
+            
+            // Sort and trim to top 10
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, 10);
+            
+            // Save to local storage
+            saveHighScores();
+            
+            // Update the display
+            displayHighScores();
+            
+            // Hide the modal
+            highscoreModal.style.display = 'none';
+            
+            // Clear the flag that player is entering high score
+            enteringHighScore = false;
+        }
+        
+        // Get weapon color based on level
+        function getWeaponColor(level) {
+            if (level >= 6) return glitchColors.secondary; // Purple for level 6
+            else if (level >= 5) return '#f08'; // Pink for level 5
+            else if (level >= 4) return glitchColors.alert; // Red for level 4
+            else if (level >= 3) return glitchColors.tertiary; // Cyan for level 3
+            else if (level >= 2) return glitchColors.highlight; // Yellow for level 2
+            else return glitchColors.light; // White for level 1
+        }
+        
+        // Get a random color from the asteroid fill colors array
+        function getRandomAsteroidFillColor() {
+            const index = Math.floor(Math.random() * asteroidFillColors.length);
+            return asteroidFillColors[index];
+        }
+		// Create initial asteroids
+        function createAsteroids() {
+            asteroids = [];
+            const numAsteroids = 3 + Math.floor(level * 1.5);
+            
+            // Calculate how many large asteroids to include (more in higher levels)
+            const numLargeAsteroids = Math.min(Math.floor(level / 2), Math.floor(numAsteroids / 2));
+            
+            for (let i = 0; i < numAsteroids; i++) {
+                // Make sure asteroids don't spawn on top of the ship
+                let x, y;
+                do {
+                    x = Math.random() * canvas.width;
+                    y = Math.random() * canvas.height;
+                } while (
+                    Math.sqrt(Math.pow(ship.x - x, 2) + Math.pow(ship.y - y, 2)) < 100
+                );
+                
+                // Determine if this should be a large asteroid (more common in higher levels)
+                const isLarge = i < numLargeAsteroids;
+                const size = isLarge ? 3 : 2; // Size 3 = large, 2 = medium, 1 = small
+                
+                // Calculate health based on size and level
+                const health = calculateAsteroidHealth(size, level);
+                
+                // Add glitch characteristics to each asteroid
+                const glitchFactor = Math.random() * 0.5;
+                
+                // Generate jagged shape with more vertices and noise
+                const numVertices = Math.floor(Math.random() * 5) + 7; // 7-11 vertices
+                
+                // Generate random fill color with shifting properties
+                const fillHue = getRandomAsteroidFillColor();
+                const fillAlpha = 0.1 + Math.random() * 0.15; // Low opacity for subtle fill
+                
+                // Additional glitch variables for color shifting
+                const colorShiftRate = Math.random() * 0.02 + 0.01; // How fast the color shifts
+                const colorShiftAmount = Math.random() * 0.5 + 0.5; // How much the color changes
+                
+                // Create vertex jitters for extra noisiness in shape
+                const vertexOffsets = Array(numVertices).fill(0).map(() => Math.random() * 0.5 - 0.25);
+                const vertexJitters = Array(numVertices).fill(0).map(() => Math.random() * 0.2 - 0.1);
+                
+                asteroids.push({
+                    x: x,
+                    y: y,
+                    radius: isLarge ? 50 + Math.random() * 15 : 20 + Math.random() * 20,
+                    xv: (Math.random() * 2 - 1) * asteroidSpeed * (isLarge ? 0.7 : 1), // Large asteroids move slower
+                    yv: (Math.random() * 2 - 1) * asteroidSpeed * (isLarge ? 0.7 : 1),
+                    vertices: numVertices,
+                    jaggedness: Math.random() * 0.4 + 0.3, // Increased for more jaggedness
+                    size: size,
+                    health: health, // Health based on size and level
+                    maxHealth: health, // Store the max health for rendering
+                    glitchOffset: { x: 0, y: 0 }, // For glitch effect
+                    glitchFactor: glitchFactor, // How much this asteroid glitches
+                    colorShift: 0, // Color shift amount
+                    lastGlitch: 0, // Timer for glitch effect
+                    vertexOffsets: vertexOffsets, // Random vertex deformation
+                    vertexJitters: vertexJitters, // Additional noise for vertices
+                    fillColor: fillHue, // Base fill color (just the hue value)
+                    fillAlpha: fillAlpha, // Base alpha for fill
+                    colorShiftRate: colorShiftRate, // How fast the color shifts
+                    colorShiftAmount: colorShiftAmount, // How much the color shifts
+                    colorShiftTime: 0, // Time counter for color shifting
+                    fillPattern: Math.floor(Math.random() * 3), // Random fill pattern (0-2, removed concentric circles)
+                    innerGlow: Math.random() < 0.3, // Some asteroids have inner glow
+                    noiseEdgeAmount: Math.random() * 0.3 + 0.1, // Amount of noise on edges
+                    preCalculatedVertices: [] // Will store pre-calculated vertices for consistent rendering
+                });
+                
+                // Pre-calculate the initial vertices for consistent shape but with noise
+                const asteroid = asteroids[asteroids.length - 1];
+                for (let i = 0; i < asteroid.vertices; i++) {
+                    const angle = i * Math.PI * 2 / asteroid.vertices;
+                    const vertexOffset = asteroid.vertexOffsets[i];
+                    // Add some randomness to radius (jaggedness)
+                    const jag = asteroid.radius * (1 - asteroid.jaggedness + Math.random() * asteroid.jaggedness);
+                    
+                    // Store the relative offset from center with additional noise
+                    asteroid.preCalculatedVertices.push({
+                        offsetX: (jag + jag * vertexOffset) * Math.cos(angle),
+                        offsetY: (jag + jag * vertexOffset) * Math.sin(angle),
+                        jitter: asteroid.vertexJitters[i], // Store jitter value for animation
+                        angle: angle // Store angle for noise animation
+                    });
+                }
+            }
+            
+            // Create a bigger glitch effect when asteroids spawn
+            createGlitchEffect(60, 2);
+            
+            // Increased powerup chance (75% instead of 50%)
+            if (Math.random() < 0.75 || level % 3 === 0) {
+                createPowerup();
+            }
+        }
+
+        // Create a powerup
+        function createPowerup() {
+            // Make sure powerup doesn't spawn on top of the ship
+            let x, y;
+            do {
+                x = Math.random() * (canvas.width - 100) + 50;
+                y = Math.random() * (canvas.height - 100) + 50;
+            } while (
+                Math.sqrt(Math.pow(ship.x - x, 2) + Math.pow(ship.y - y, 2)) < 100
+            );
+            
+            // Modified: Weapon powerups more common (70% chance instead of 50%)
+            const powerupType = Math.random();
+            let type;
+            if (powerupType < 0.7) {
+                type = 'weapon';
+            } else {
+                type = 'energy';
+            }
+            
+            powerups.push({
+                x: x,
+                y: y,
+                radius: 15,
+                xv: (Math.random() * 0.5 - 0.25),
+                yv: (Math.random() * 0.5 - 0.25),
+                pulseTime: 0,
+                type: type,
+                glitchOffset: { x: 0, y: 0 }, // For glitch effect
+                glitchIntensity: Math.random() * 0.3, // Random glitch intensity
+                scanlineOffset: Math.random() * 10 // For scanline effect
+            });
+            
+            // Create a small glitch effect when powerup spawns
+            createGlitchEffect(30, 1);
+        }
+        
+        // Create special attack effect with glitch aesthetics
+        function createSpecialAttack() {
+            if (weaponLevel < 2 || !specialAttackReady) {
+                // Can't use special attack if weapon level is too low or on cooldown
+                if (weaponLevel < 2) {
+                    createFloatingText(ship.x, ship.y - 20, "Need Weapon Level 2+!", 60, glitchColors.alert);
+                } else {
+                    createFloatingText(ship.x, ship.y - 20, "Special Attack Recharging!", 60, glitchColors.alert);
+                }
+                return;
+            }
+            
+            // Special attack power based on weapon level
+            const attackPower = weaponLevel;
+            const attackRadius = canvas.width * (0.3 + (weaponLevel * 0.1));
+            
+            // Create special effect
+            specialEffects.push({
+                x: ship.x,
+                y: ship.y,
+                radius: 1, // Start small
+                maxRadius: attackRadius,
+                currentFrame: 0,
+                totalFrames: 45, // Duration of effect
+                power: attackPower,
+                color: glitchColors.secondary,
+                glitchIntensity: 3,
+                pulseRate: Math.random() * 0.1 + 0.05
+            });
+            
+            // Create glitch particles for effect
+            createParticles(ship.x, ship.y, 60, glitchColors.secondary);
+            createDigitalParticles(ship.x, ship.y, 40, glitchColors.secondary);
+            
+            // Use weapon level for attack
+            createFloatingText(ship.x, ship.y - 40, "SPECIAL ATTACK!", 90, glitchColors.secondary, 24);
+            
+            // Decrease weapon level
+            weaponLevel = Math.max(1, weaponLevel - 1);
+            if (weaponLevel > 1) {
+                weaponTimer = 600; // 10 seconds at 60fps for remaining levels
+            } else {
+                weaponTimer = 0;
+            }
+            
+            // Reduce asteroid speed
+            asteroidSpeed = Math.max(0.5, asteroidSpeed * 0.75);
+            createFloatingText(ship.x, ship.y - 70, "ASTEROID SPEED REDUCED!", 90, glitchColors.tertiary, 20);
+            
+            // Create a major glitch effect
+            createGlitchEffect(90, 4);
+            
+            // Put special attack on cooldown
+            specialAttackReady = false;
+            specialAttackCooldown = 300; // 5 seconds cooldown
+            updateSpecialMeter();
+        }
+        
+        // Reset the ship
+        function resetShip() {
+            ship.x = canvas.width / 2;
+            ship.y = canvas.height / 2;
+            ship.angle = 0;
+            ship.rotation = 0;
+            ship.thrusting = false;
+            ship.thrust.x = 0;
+            ship.thrust.y = 0;
+            ship.invulnerable = true;
+            ship.invulnerableTime = 180; // 3 seconds at 60fps
+            
+            // Create a glitch effect when ship respawns
+            createGlitchEffect(60, 3);
+            createDigitalParticles(ship.x, ship.y, 30, glitchColors.tertiary);
+        }
+
+        // Reset the game
+        function resetGame() {
+            // Reset all game variables to initial state
+            score = 0;
+            lives = 3;
+            level = 1;
+            asteroidSpeed = 1;
+            weaponLevel = 1;
+            weaponTimer = 0;
+            shieldEnergy = 100;
+            shieldActive = false;
+            gameOver = false;
+            specialAttackReady = true;
+            specialAttackCooldown = 0;
+            glitchIntensity = 0;
+            glitchTimer = 0;
+            screenShakeIntensity = 0;
+            staticNoiseLevel = 0;
+            colorShiftAmount = 0;
+            enteringHighScore = false;
+            
+            // Clear all game objects
+            asteroids = [];
+            bullets = [];
+            particles = [];
+            powerups = [];
+            floatingTexts = [];
+            specialEffects = [];
+            glitchEffects = [];
+            
+            // Reset ship position and properties
+            resetShip();
+            
+            // Create initial asteroids
+            createAsteroids();
+            
+            // Reset UI elements
+            gameOverElement.style.display = 'none';
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            shieldElement.textContent = shieldEnergy;
+            updateSpecialMeter();
+            
+            // Clear any previous game loop and start fresh
+            if (gameLoopId) {
+                cancelAnimationFrame(gameLoopId);
+            }
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        // Fire a bullet with glitch aesthetics
+        function fireBullet() {
+            const currentTime = Date.now();
+            // Rate limit the firing
+            if (currentTime - lastFireTime <= fireRate) {
+                return;
+            }
+            lastFireTime = currentTime;
+            
+            // Limit to bullets at once based on weapon level
+            const bulletLimit = 5 + (weaponLevel - 1) * 3;
+            if (bullets.length < bulletLimit) {
+                const angle = ship.angle;
+                const bulletSpeed = 7 + (weaponLevel - 1) * 0.5;
+                const bulletSize = 3 + (weaponLevel - 1) * 0.3;
+                const bulletLife = 60 + (weaponLevel - 1) * 10;
+                
+                // Calculate actual damage based on weapon level
+                const bulletDamage = calculateWeaponDamage(weaponLevel);
+                
+                // Number of bullets to fire based on weapon level
+                const numBullets = Math.min(weaponLevel, 6);
+                
+                // Small glitch effect when firing
+                createGlitchEffect(5, 0.5);
+                
+                if (numBullets === 1) {
+                    // Just fire straight ahead
+                    bullets.push({
+                        x: ship.x + ship.radius * Math.cos(angle),
+                        y: ship.y - ship.radius * Math.sin(angle),
+                        xv: bulletSpeed * Math.cos(angle),
+                        yv: -bulletSpeed * Math.sin(angle),
+                        radius: bulletSize,
+                        life: bulletLife,
+                        power: bulletDamage, // Use calculated damage instead of raw weapon level
+                        color: getWeaponColor(weaponLevel),
+                        glitchIntensity: Math.random() * 0.2,
+                        pixelated: true
+                    });
+                } else {
+                    // Multishot pattern
+                    // Spread angle depends on number of bullets
+                    const totalSpread = Math.min(0.8, (numBullets - 1) * 0.15);
+                    const angleStep = totalSpread / (numBullets - 1);
+                    
+                    // Create bullets in a spread pattern
+                    for (let i = 0; i < numBullets; i++) {
+                        // Calculate bullet angle within the spread
+                        const bulletAngle = angle - totalSpread/2 + angleStep * i;
+                        
+                        // Create the bullet with glitch properties
+                        bullets.push({
+                            x: ship.x + ship.radius * Math.cos(bulletAngle),
+                            y: ship.y - ship.radius * Math.sin(bulletAngle),
+                            xv: bulletSpeed * Math.cos(bulletAngle),
+                            yv: -bulletSpeed * Math.sin(bulletAngle),
+                            radius: bulletSize,
+                            life: bulletLife,
+                            power: bulletDamage, // Use calculated damage instead of raw weapon level
+                            color: getWeaponColor(weaponLevel),
+                            glitchIntensity: Math.random() * 0.2,
+                            pixelated: true
+                        });
+                    }
+                }
+            }
+        }
+		// Event listeners for keyboard
+        document.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.code)) {
+                keys[e.code] = true;
+            }
+            
+            // Restart game with R key
+            if (e.code === 'KeyR' && gameOver) {
+                resetGame();
+            }
+            
+            // Special attack with F key
+            if (e.code === 'KeyF' && !gameOver) {
+                createSpecialAttack();
+            }
+            
+            // Reset high scores with T key - Only allow when not entering a high score
+            if (e.code === 'KeyT' && !enteringHighScore) {
+                showResetConfirmation();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.code)) {
+                keys[e.code] = false;
+            }
+        });
+        
+        // Set up high score save button
+        saveScoreButton.addEventListener('click', savePlayerScore);
+        
+        // Allow Enter key in name input
+        playerNameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                savePlayerScore();
+            }
+        });
+        
+        // Set up reset confirmation buttons
+        confirmResetButton.addEventListener('click', () => {
+            resetHighScores();
+            confirmResetModal.style.display = 'none';
+        });
+        
+        cancelResetButton.addEventListener('click', () => {
+            confirmResetModal.style.display = 'none';
+        });
+
+        // Update glitch effects
+        function updateGlitchEffects() {
+            // Update global glitch timer
+            if (glitchTimer > 0) {
+                glitchTimer--;
+                
+                // Random glitch offsets for screen elements
+                if (Math.random() < 0.1 * glitchIntensity) {
+                    ship.glitchOffset.x = (Math.random() * 2 - 1) * glitchIntensity * 5;
+                    ship.glitchOffset.y = (Math.random() * 2 - 1) * glitchIntensity * 5;
+                }
+                
+                // Random color shifts
+                if (Math.random() < 0.05 * glitchIntensity) {
+                    colorShiftAmount = Math.random() * glitchIntensity * 5;
+                }
+                
+                // Decay glitch intensity
+                if (glitchTimer === 0) {
+                    glitchIntensity = 0;
+                } else {
+                    glitchIntensity *= 0.99;
+                }
+            } else {
+                // Reset glitch offsets
+                ship.glitchOffset.x = 0;
+                ship.glitchOffset.y = 0;
+                colorShiftAmount = 0;
+            }
+            
+            // Decay screen shake
+            screenShakeIntensity *= screenShakeDecay;
+            if (screenShakeIntensity < 0.1) screenShakeIntensity = 0;
+            
+            // Decay static noise
+            staticNoiseLevel *= 0.95;
+            if (staticNoiseLevel < 0.01) staticNoiseLevel = 0;
+            
+            // Apply random glitches to asteroids and update color shifts
+            asteroids.forEach(asteroid => {
+                // Update color shift time
+                asteroid.colorShiftTime += asteroid.colorShiftRate;
+                
+                // Random chance to trigger glitch based on asteroid's glitch factor
+                if (Math.random() < 0.01 * asteroid.glitchFactor) {
+                    asteroid.lastGlitch = 10; // Set glitch timer
+                    asteroid.glitchOffset.x = (Math.random() * 2 - 1) * 10 * asteroid.glitchFactor;
+                    asteroid.glitchOffset.y = (Math.random() * 2 - 1) * 10 * asteroid.glitchFactor;
+                    
+                    // Sometimes shift color
+                    if (Math.random() < 0.3) {
+                        asteroid.colorShift = Math.random() * 30;
+                    }
+                    
+                    // Sometimes change the fill color
+                    if (Math.random() < 0.2) {
+                        asteroid.fillColor = getRandomAsteroidFillColor();
+                    }
+                }
+                
+                // Decay glitch effects
+                if (asteroid.lastGlitch > 0) {
+                    asteroid.lastGlitch--;
+                    
+                    if (asteroid.lastGlitch === 0) {
+                        asteroid.glitchOffset.x = 0;
+                        asteroid.glitchOffset.y = 0;
+                        asteroid.colorShift = 0;
+                    }
+                }
+                
+                // Update vertex offsets for glitchy shape - subtle animation
+                for (let i = 0; i < asteroid.vertexOffsets.length; i++) {
+                    if (Math.random() < 0.05) { // Occasional update
+                        const vertex = asteroid.preCalculatedVertices[i];
+                        // Update jitter based on noise
+                        vertex.jitter = Math.sin(Date.now() * 0.001 + vertex.angle) * asteroid.noiseEdgeAmount;
+                    }
+                }
+            });
+            
+            // Apply random glitches to powerups
+            powerups.forEach(powerup => {
+                if (Math.random() < 0.05 * powerup.glitchIntensity) {
+                    powerup.glitchOffset.x = (Math.random() * 2 - 1) * 5 * powerup.glitchIntensity;
+                    powerup.glitchOffset.y = (Math.random() * 2 - 1) * 5 * powerup.glitchIntensity;
+                } else {
+                    powerup.glitchOffset.x *= 0.9;
+                    powerup.glitchOffset.y *= 0.9;
+                }
+                
+                // Update scanline offset
+                powerup.scanlineOffset += 0.2;
+            });
+        }
+
+        // Update game state
+        function update() {
+            // Calculate delta time for smooth animations
+            const currentTime = Date.now();
+            deltaTime = (currentTime - lastFrameTime) / (1000 / 60); // Normalize to 60fps
+            lastFrameTime = currentTime;
+            
+            if (deltaTime > 2) deltaTime = 2; // Cap delta time to prevent huge jumps
+            
+            // Update glitch effects
+            updateGlitchEffects();
+            
+            // Handle ship rotation
+            if (keys.ArrowLeft || keys.KeyA) {
+                ship.rotation = 0.1;
+            } else if (keys.ArrowRight || keys.KeyD) {
+                ship.rotation = -0.1;
+            } else {
+                ship.rotation = 0;
+            }
+
+            // Handle ship thrust
+            ship.thrusting = keys.ArrowUp || keys.KeyW;
+            
+            // Handle shield activation with Shift key
+            if ((keys.ShiftLeft || keys.ShiftRight) && shieldEnergy > 0 && !gameOver) {
+                shieldActive = true;
+                // Drain shield energy when active
+                shieldEnergy = Math.max(0, shieldEnergy - shieldDrainRate);
+                
+                // Disable shield when energy is depleted
+                if (shieldEnergy <= 0) {
+                    shieldActive = false;
+                }
+            } else {
+                shieldActive = false;
+            }
+
+            // Handle ship firing with Space key
+            if (keys.Space && !gameOver) {
+                fireBullet();
+            }
+
+            // Move ship
+            ship.angle += ship.rotation;
+            
+            if (ship.thrusting && !gameOver) {
+                ship.thrust.x += Math.cos(ship.angle) * 0.1;
+                ship.thrust.y -= Math.sin(ship.angle) * 0.1;
+                
+                // Create enhanced engine effect
+                createEngineParticles(ship);
+            } else {
+                // Apply friction
+                ship.thrust.x *= 0.99;
+                ship.thrust.y *= 0.99;
+            }
+
+            // Limit max speed
+            const speed = Math.sqrt(Math.pow(ship.thrust.x, 2) + Math.pow(ship.thrust.y, 2));
+            const maxSpeed = 5;
+            if (speed > maxSpeed) {
+                ship.thrust.x *= maxSpeed / speed;
+                ship.thrust.y *= maxSpeed / speed;
+            }
+
+            // Update ship position
+            ship.x += ship.thrust.x;
+            ship.y += ship.thrust.y;
+
+            // Handle ship invulnerability timer
+            if (ship.invulnerable) {
+                ship.invulnerableTime--;
+                if (ship.invulnerableTime <= 0) {
+                    ship.invulnerable = false;
+                }
+            }
+
+            // Handle ship screen wrapping
+            if (ship.x < 0 - ship.radius) ship.x = canvas.width + ship.radius;
+            if (ship.x > canvas.width + ship.radius) ship.x = 0 - ship.radius;
+            if (ship.y < 0 - ship.radius) ship.y = canvas.height + ship.radius;
+            if (ship.y > canvas.height + ship.radius) ship.y = 0 - ship.radius;
+
+            // Update weapon timer
+            if (weaponTimer > 0) {
+                weaponTimer--;
+                if (weaponTimer <= 0) {
+                    // Downgrade weapon by 1 level (minimum 1)
+                    weaponLevel = Math.max(1, weaponLevel - 1);
+                    if (weaponLevel > 1) {
+                        // Add some more time for the next level
+                        weaponTimer = 300; // 5 seconds for the next level down
+                        createFloatingText(ship.x, ship.y - 20, `WEAPON LVL ${weaponLevel}`, 60, getWeaponColor(weaponLevel));
+                    }
+					// Call updateSpecialMeter() to ensure display is correct after level change
+					updateSpecialMeter();
+                }
+            }
+            
+            // Update special attack cooldown
+            if (!specialAttackReady) {
+                specialAttackCooldown--;
+                if (specialAttackCooldown <= 0) {
+                    specialAttackReady = true;
+                    // Create a small glitch effect when special attack is ready
+                    createGlitchEffect(15, 1);
+                }
+                // Update the special meter display
+                updateSpecialMeter();
+            }
+            
+            // Update special effects
+            specialEffects = specialEffects.filter(effect => {
+                effect.currentFrame++;
+                
+                // Calculate current radius based on animation progress
+                const progress = effect.currentFrame / effect.totalFrames;
+                effect.radius = effect.maxRadius * progress;
+                
+                // Pulsating effect
+                const pulseModifier = 1 + Math.sin(effect.currentFrame * effect.pulseRate) * 0.1;
+                
+                // Check for collision with asteroids
+                asteroids.forEach(asteroid => {
+                    const distance = Math.sqrt(
+                        Math.pow(effect.x - asteroid.x, 2) + 
+                        Math.pow(effect.y - asteroid.y, 2)
+                    );
+                    
+                    if (distance < effect.radius * pulseModifier + asteroid.radius) {
+                        // Apply damage based on special attack power and distance from center
+                        const distanceFactor = 1 - (distance / effect.maxRadius);
+                        const damage = Math.ceil(effect.power * distanceFactor);
+                        
+                        // Reduce asteroid health
+                        asteroid.health -= damage;
+                        
+                        // Create glitch damage indicator
+                        if (asteroid.health > 0) {
+                            createFloatingText(
+                                asteroid.x, 
+                                asteroid.y, 
+                                `-${damage}`, 
+                                30, 
+                                glitchColors.secondary
+                            );
+                            
+                            // Add glitch effect to the damaged asteroid
+                            createGlitchEffect(10, 0.5);
+                            asteroid.lastGlitch = 15;
+                            asteroid.glitchOffset.x = (Math.random() * 2 - 1) * 10;
+                            asteroid.glitchOffset.y = (Math.random() * 2 - 1) * 10;
+                        }
+                    }
+                });
+                
+                return effect.currentFrame < effect.totalFrames;
+            });
+            
+            // Update floating texts
+            floatingTexts = floatingTexts.filter(text => {
+                text.y += text.yVel;
+                text.life--;
+                text.alpha = text.life / 60; // Fade out
+                
+                // Glitch text randomly
+                if (Math.random() < 0.1 * text.glitchIntensity) {
+                    text.glitchOffset = {
+                        x: (Math.random() * 2 - 1) * 4 * text.glitchIntensity,
+                        y: (Math.random() * 2 - 1) * 4 * text.glitchIntensity
+                    };
+                } else {
+                    text.glitchOffset = { x: 0, y: 0 };
+                }
+                
+                return text.life > 0;
+            });
+            
+            // Update bullets
+            bullets = bullets.filter(bullet => {
+                // Move bullets
+                bullet.x += bullet.xv;
+                bullet.y += bullet.yv;
+                
+                // Add glitch effects to bullets
+                if (Math.random() < 0.05 * bullet.glitchIntensity) {
+                    bullet.glitchOffset = {
+                        x: (Math.random() * 2 - 1) * 3 * bullet.glitchIntensity,
+                        y: (Math.random() * 2 - 1) * 3 * bullet.glitchIntensity
+                    };
+                } else {
+                    bullet.glitchOffset = { x: 0, y: 0 };
+                }
+                
+                // Handle screen wrapping for bullets
+                if (bullet.x < 0 - bullet.radius) bullet.x = canvas.width + bullet.radius;
+                if (bullet.x > canvas.width + bullet.radius) bullet.x = 0 - bullet.radius;
+                if (bullet.y < 0 - bullet.radius) bullet.y = canvas.height + bullet.radius;
+                if (bullet.y > canvas.height + bullet.radius) bullet.y = 0 - bullet.radius;
+                
+                // Remove bullets when they expire
+                bullet.life--;
+                if (bullet.life <= 0) {
+                    return false;
+                }
+                return true;
+            });
+            
+            // Update powerups
+            powerups = powerups.filter(powerup => {
+                // Move powerups
+                powerup.x += powerup.xv;
+                powerup.y += powerup.yv;
+                powerup.pulseTime = (powerup.pulseTime + 1) % 60;
+                
+                // Handle screen wrapping for powerups
+                if (powerup.x < 0 - powerup.radius) powerup.x = canvas.width + powerup.radius;
+                if (powerup.x > canvas.width + powerup.radius) powerup.x = 0 - powerup.radius;
+                if (powerup.y < 0 - powerup.radius) powerup.y = canvas.height + powerup.radius;
+                if (powerup.y > canvas.height + powerup.radius) powerup.y = 0 - powerup.radius;
+                
+                // Check for collision with the ship
+                const distance = Math.sqrt(
+                    Math.pow(powerup.x - ship.x, 2) + 
+                    Math.pow(powerup.y - ship.y, 2)
+                );
+                
+                if (distance < ship.radius + powerup.radius && !gameOver) {
+                    // Apply powerup effect
+                    if (powerup.type === 'weapon') {
+                        weaponLevel = Math.min(6, weaponLevel + 1);
+                        weaponTimer = 600; // 10 seconds at 60fps
+                        createParticles(ship.x, ship.y, 30, glitchColors.highlight);
+                        createDigitalParticles(ship.x, ship.y, 20, glitchColors.highlight);
+                        createFloatingText(ship.x, ship.y - 20, `WEAPON LVL ${weaponLevel}!`, 60, getWeaponColor(weaponLevel));
+                        
+                        // Create a glitch effect
+                        createGlitchEffect(30, 1.5);
+                        
+                        // Update special meter in case weapon level changed
+                        updateSpecialMeter();
+                    } else if (powerup.type === 'energy') {
+                        // Restore shield energy
+                        shieldEnergy = Math.min(100, shieldEnergy + 50); // Add 50% energy
+                        
+                        // NEW: Also adds to weapon timer when picking up energy powerup
+                        if (weaponLevel > 1) {
+                            weaponTimer = Math.min(600, weaponTimer + 300); // Add 5 seconds, max 10 seconds
+                            createFloatingText(ship.x, ship.y - 40, `WEAPON TIME +5s!`, 60, getWeaponColor(weaponLevel));
+                        }
+                        
+                        createParticles(ship.x, ship.y, 30, glitchColors.primary);
+                        createDigitalParticles(ship.x, ship.y, 20, glitchColors.primary);
+                        createFloatingText(ship.x, ship.y - 20, `SHIELD +50%!`, 60, glitchColors.primary);
+                        
+                        // Create a glitch effect
+                        createGlitchEffect(20, 1);
+                    }
+                    
+                    // Remove the powerup
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            // Update particles
+            particles = particles.filter(particle => {
+                particle.x += particle.xv;
+                particle.y += particle.yv;
+                particle.life--;
+                
+                // Add glitch effect to particles
+                if (particle.glitchOffset && Math.random() < 0.02) {
+                    particle.glitchOffset.x = (Math.random() * 2 - 1) * 2;
+                    particle.glitchOffset.y = (Math.random() * 2 - 1) * 2;
+                }
+                
+                return particle.life > 0;
+            });
+
+            // Update display
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            shieldElement.textContent = Math.floor(shieldEnergy);
+			// Update asteroids and check for collisions
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                
+                // Move asteroids
+                asteroid.x += asteroid.xv;
+                asteroid.y += asteroid.yv;
+                
+                // Handle asteroid screen wrapping
+                if (asteroid.x < 0 - asteroid.radius) asteroid.x = canvas.width + asteroid.radius;
+                if (asteroid.x > canvas.width + asteroid.radius) asteroid.x = 0 - asteroid.radius;
+                if (asteroid.y < 0 - asteroid.radius) asteroid.y = canvas.height + asteroid.radius;
+                if (asteroid.y > canvas.height + asteroid.radius) asteroid.y = 0 - asteroid.radius;
+                
+                // Check for asteroid destruction by health
+                if (asteroid.health <= 0) {
+                    // Create explosion particles
+                    createParticles(asteroid.x, asteroid.y, Math.floor(asteroid.radius * 1.5), glitchColors.secondary);
+                    createDigitalParticles(asteroid.x, asteroid.y, Math.floor(asteroid.radius * 0.5), glitchColors.secondary);
+                    
+                    // Create glitch effect proportional to asteroid size
+                    createGlitchEffect(20 * asteroid.size, asteroid.size * 0.5);
+                    
+                    // Score based on size and health
+                    let scoreValue = 0;
+                    if (asteroid.size === 3) { // Large
+                        scoreValue = 25 * Math.ceil(asteroid.maxHealth / baseAsteroidHealth.large);
+                    } else if (asteroid.size === 2) { // Medium
+                        scoreValue = 50 * Math.ceil(asteroid.maxHealth / baseAsteroidHealth.medium);
+                    } else { // Small
+                        scoreValue = 100 * Math.ceil(asteroid.maxHealth / baseAsteroidHealth.small);
+                    }
+                    
+                    // Apply score 
+                    score += scoreValue;
+                    
+                    // Display score value
+                    createFloatingText(
+                        asteroid.x, 
+                        asteroid.y, 
+                        `+${scoreValue}`, 
+                        60, 
+                        glitchColors.highlight,
+                        18
+                    );
+                    
+                    // Break asteroid based on its size
+                    if (asteroid.size === 3) { // Large asteroid -> medium
+                        // Split large into medium asteroids
+                        const pieces = Math.floor(Math.random() * 2) + 2; // 2-3 pieces
+                        for (let k = 0; k < pieces; k++) {
+                            const health = calculateAsteroidHealth(2, level);
+                            
+                            // Calculate vertices and offsets for new asteroid
+                            const numVertices = Math.floor(Math.random() * 5) + 7; // 7-11 vertices
+                            const vertexOffsets = Array(numVertices).fill(0).map(() => Math.random() * 0.5 - 0.25);
+                            const vertexJitters = Array(numVertices).fill(0).map(() => Math.random() * 0.2 - 0.1);
+                            
+                            // Generate random fill color for the asteroid
+                            const fillHue = getRandomAsteroidFillColor();
+                            const fillAlpha = 0.1 + Math.random() * 0.15; // Low opacity for subtle fill
+                            
+                            const newAsteroid = {
+                                x: asteroid.x,
+                                y: asteroid.y,
+                                radius: asteroid.radius / 1.5,
+                                xv: asteroid.xv + (Math.random() * 2 - 1) * 2 * asteroidSpeed,
+                                yv: asteroid.yv + (Math.random() * 2 - 1) * 2 * asteroidSpeed,
+                                vertices: numVertices,
+                                jaggedness: Math.random() * 0.4 + 0.3, // Increased jaggedness
+                                size: 2, // Medium size
+                                health: health,
+                                maxHealth: health,
+                                glitchOffset: { x: 0, y: 0 },
+                                glitchFactor: Math.random() * 0.5,
+                                colorShift: 0,
+                                lastGlitch: 0,
+                                vertexOffsets: vertexOffsets,
+                                vertexJitters: vertexJitters,
+                                fillColor: fillHue,
+                                fillAlpha: fillAlpha,
+                                colorShiftRate: Math.random() * 0.02 + 0.01,
+                                colorShiftAmount: Math.random() * 0.5 + 0.5,
+                                colorShiftTime: 0,
+                                fillPattern: Math.floor(Math.random() * 3), // 0-2 (removed concentric circles)
+                                innerGlow: Math.random() < 0.3, // Some asteroids have inner glow
+                                noiseEdgeAmount: Math.random() * 0.3 + 0.1,
+                                preCalculatedVertices: []
+                            };
+                            
+                            // Pre-calculate vertices for consistent rendering with noise
+                            for (let i = 0; i < newAsteroid.vertices; i++) {
+                                const angle = i * Math.PI * 2 / newAsteroid.vertices;
+                                const vertexOffset = newAsteroid.vertexOffsets[i];
+                                const jag = newAsteroid.radius * (1 - newAsteroid.jaggedness + Math.random() * newAsteroid.jaggedness);
+                                
+                                // Store the relative offset from center with jitter
+                                newAsteroid.preCalculatedVertices.push({
+                                    offsetX: (jag + jag * vertexOffset) * Math.cos(angle),
+                                    offsetY: (jag + jag * vertexOffset) * Math.sin(angle),
+                                    jitter: newAsteroid.vertexJitters[i],
+                                    angle: angle
+                                });
+                            }
+                            
+                            asteroids.push(newAsteroid);
+                        }
+                    } else if (asteroid.size === 2) { // Medium asteroid -> small
+                        // Split medium into small asteroids
+                        const pieces = Math.floor(Math.random() * 3) + 2; // 2-4 pieces
+                        for (let k = 0; k < pieces; k++) {
+                            const health = calculateAsteroidHealth(1, level);
+                            
+                            // Calculate vertices and offsets for new asteroid
+                            const numVertices = Math.floor(Math.random() * 5) + 7; // 7-11 vertices
+                            const vertexOffsets = Array(numVertices).fill(0).map(() => Math.random() * 0.5 - 0.25);
+                            const vertexJitters = Array(numVertices).fill(0).map(() => Math.random() * 0.2 - 0.1);
+                            
+                            // Generate random fill color
+                            const fillHue = getRandomAsteroidFillColor();
+                            const fillAlpha = 0.1 + Math.random() * 0.15; // Low opacity for subtle fill
+                            
+                            const newAsteroid = {
+                                x: asteroid.x,
+                                y: asteroid.y,
+                                radius: asteroid.radius / 2,
+                                xv: asteroid.xv + (Math.random() * 3 - 1.5) * 2 * asteroidSpeed,
+                                yv: asteroid.yv + (Math.random() * 3 - 1.5) * 2 * asteroidSpeed,
+                                vertices: numVertices,
+                                jaggedness: Math.random() * 0.4 + 0.3, // Increased jaggedness
+                                size: 1, // Small size
+                                health: health,
+                                maxHealth: health,
+                                glitchOffset: { x: 0, y: 0 },
+                                glitchFactor: Math.random() * 0.5,
+                                colorShift: 0,
+                                lastGlitch: 0,
+                                vertexOffsets: vertexOffsets,
+                                vertexJitters: vertexJitters,
+                                fillColor: fillHue,
+                                fillAlpha: fillAlpha,
+                                colorShiftRate: Math.random() * 0.02 + 0.01,
+                                colorShiftAmount: Math.random() * 0.5 + 0.5,
+                                colorShiftTime: 0,
+                                fillPattern: Math.floor(Math.random() * 3), // 0-2 (removed concentric circles)
+                                innerGlow: Math.random() < 0.3, // Some asteroids have inner glow
+                                noiseEdgeAmount: Math.random() * 0.3 + 0.1,
+                                preCalculatedVertices: []
+                            };
+                            
+                            // Pre-calculate vertices for consistent rendering with noise
+                            for (let i = 0; i < newAsteroid.vertices; i++) {
+                                const angle = i * Math.PI * 2 / newAsteroid.vertices;
+                                const vertexOffset = newAsteroid.vertexOffsets[i];
+                                const jag = newAsteroid.radius * (1 - newAsteroid.jaggedness + Math.random() * newAsteroid.jaggedness);
+                                
+                                // Store the relative offset from center with jitter
+                                newAsteroid.preCalculatedVertices.push({
+                                    offsetX: (jag + jag * vertexOffset) * Math.cos(angle),
+                                    offsetY: (jag + jag * vertexOffset) * Math.sin(angle),
+                                    jitter: newAsteroid.vertexJitters[i],
+                                    angle: angle
+                                });
+                            }
+                            
+                            asteroids.push(newAsteroid);
+                        }
+                    } else {
+                        // Small asteroid destroyed
+                        // Increased chance of dropping a powerup (25% instead of 15%)
+                        if (Math.random() < 0.25 && powerups.length < 3) { // Allow more powerups
+                            // Modified: Weapon powerups more common (70% vs 30%)
+                            const powerupType = Math.random();
+                            let type;
+                            if (powerupType < 0.7) {
+                                type = 'weapon';
+                            } else {
+                                type = 'energy';
+                            }
+                            
+                            let powerup = {
+                                x: asteroid.x,
+                                y: asteroid.y,
+                                radius: 15,
+                                xv: asteroid.xv * 0.5,
+                                yv: asteroid.yv * 0.5,
+                                pulseTime: 0,
+                                type: type,
+                                glitchOffset: { x: 0, y: 0 },
+                                glitchIntensity: Math.random() * 0.3,
+                                scanlineOffset: Math.random() * 10
+                            };
+                            powerups.push(powerup);
+                        }
+                    }
+                    
+                    // Remove the asteroid
+                    asteroids.splice(i, 1);
+                    continue;
+                }
+                
+                // Check for collisions with bullets
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const bullet = bullets[j];
+                    const distance = Math.sqrt(
+                        Math.pow(asteroid.x - bullet.x, 2) + 
+                        Math.pow(asteroid.y - bullet.y, 2)
+                    );
+                    
+                    if (distance < asteroid.radius + bullet.radius) {
+                        // Remove the bullet
+                        bullets.splice(j, 1);
+                        
+                        // Create hit particles
+                        createParticles(bullet.x, bullet.y, 15, bullet.color);
+                        
+                        // Sometimes create digital particles for effects
+                        if (Math.random() < 0.3) {
+                            createDigitalParticles(bullet.x, bullet.y, 5, bullet.color);
+                        }
+                        
+                        // Damage the asteroid based on bullet power
+                        asteroid.health -= bullet.power;
+                        
+                        // Create damage indicator
+                        createFloatingText(
+                            bullet.x, 
+                            bullet.y, 
+                            `-${bullet.power}`, 
+                            30, 
+                            bullet.color
+                        );
+                        
+                        // Add glitch effect to the asteroid when hit
+                        asteroid.lastGlitch = 15;
+                        asteroid.glitchOffset.x = (Math.random() * 2 - 1) * 8;
+                        asteroid.glitchOffset.y = (Math.random() * 2 - 1) * 8;
+                        
+                        // Create a small glitch effect on hit
+                        createGlitchEffect(10, 0.7);
+                        
+                        break;
+                    }
+                }
+                
+                // Check for shield collision with asteroids
+                if (shieldActive && !ship.invulnerable) {
+                    const distance = Math.sqrt(
+                        Math.pow(asteroid.x - ship.x, 2) + 
+                        Math.pow(asteroid.y - ship.y, 2)
+                    );
+                    
+                    if (distance < shieldRadius + asteroid.radius) {
+                        // Create shield impact particles
+                        createParticles(asteroid.x, asteroid.y, Math.floor(asteroid.radius), glitchColors.tertiary);
+                        createDigitalParticles(asteroid.x, asteroid.y, Math.floor(asteroid.radius * 0.5), glitchColors.tertiary);
+                        
+                        // Add score for shield destruction based on asteroid health and size
+                        let scoreValue = 0;
+                        if (asteroid.size === 3) { // Large
+                            scoreValue = 15 * Math.ceil(asteroid.maxHealth / baseAsteroidHealth.large);
+                        } else if (asteroid.size === 2) { // Medium
+                            scoreValue = 30 * Math.ceil(asteroid.maxHealth / baseAsteroidHealth.medium);
+                        } else { // Small
+                            scoreValue = 60 * Math.ceil(asteroid.maxHealth / baseAsteroidHealth.small);
+                        }
+                        
+                        // Apply score
+                        score += scoreValue;
+                        
+                        // Display score value
+                        createFloatingText(
+                            asteroid.x, 
+                            asteroid.y, 
+                            `+${scoreValue}`, 
+                            60, 
+                            glitchColors.highlight,
+                            18
+                        );
+                        
+                        // Extra shield energy drain on impact
+                        shieldEnergy = Math.max(0, shieldEnergy - 20);
+                        
+                        // Bonus floating text for shield kill
+                        createFloatingText(ship.x, ship.y - 30, "SHIELD KILL!", 60, glitchColors.tertiary, 22);
+                        
+                        // Create a glitch effect
+                        createGlitchEffect(30, 2);
+                        
+                        // Damage the asteroid heavily from shield impact
+                        asteroid.health = 0; // Direct destruction
+                        
+                        break;
+                    }
+                }
+                
+                // Check for ship collision with asteroid if not invulnerable and shield not active
+                if (!ship.invulnerable && !shieldActive && !gameOver) {
+                    const distance = Math.sqrt(
+                        Math.pow(asteroid.x - ship.x, 2) + 
+                        Math.pow(asteroid.y - ship.y, 2)
+                    );
+                    
+                    if (distance < ship.radius + asteroid.radius) {
+                        // Create explosion
+                        createParticles(ship.x, ship.y, 60, '#f84');
+                        createDigitalParticles(ship.x, ship.y, 30, '#f84');
+                        
+                        // Create a major glitch effect
+                        createGlitchEffect(60, 4);
+                        
+                        lives--;
+                        if (lives <= 0) {
+                            // Game over
+                            gameOver = true;
+                            gameOverElement.style.display = 'block';
+                            
+                            // Create final glitch explosion
+                            createGlitchEffect(120, 5);
+                            
+                            // Check for high score after a short delay
+                            setTimeout(() => {
+                                if (!checkHighScore()) {
+                                    // If not a high score, show "Press R to restart" message
+                                    createFloatingText(
+                                        canvas.width / 2, 
+                                        canvas.height / 2 + 50, 
+                                        "Press R to restart", 
+                                        Infinity,
+                                        glitchColors.primary,
+                                        24
+                                    );
+                                }
+                            }, 1500);
+                        } else {
+                            resetShip();
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            // Check for level completion
+            if (asteroids.length === 0 && !gameOver) {
+                level++;
+                // Restore asteroid speed when level changes, but at a slightly lower rate
+                // than the original game to maintain some of the special attack benefit
+                asteroidSpeed = Math.min(level * 0.2 + 0.5, asteroidSpeed + 0.3);
+                
+                // Give bonus lives every 5 levels
+                if (level % 5 === 0) {
+                    lives++;
+                    createFloatingText(canvas.width/2, canvas.height/2, "EXTRA LIFE!", 120, glitchColors.alert, 30);
+                    createGlitchEffect(60, 3);
+                }
+                
+                // Always fully recharge shield between levels
+                shieldEnergy = 100;
+                
+                resetShip();
+                createAsteroids();
+                
+                // Create level announcement
+                createFloatingText(canvas.width/2, canvas.height/2 - 30, `LEVEL ${level}`, 120, glitchColors.primary, 36);
+                
+                // Create a major glitch effect for level transition
+                createGlitchEffect(90, 3);
+                
+                // Always create a powerup at the start of a level (if none exist)
+                if (powerups.length === 0) {
+                    createPowerup();
+                }
+                
+                // Add a second powerup at higher levels
+                if (level > 3 && Math.random() < 0.7) {
+                    setTimeout(createPowerup, 2000); // Delayed spawn
+                }
+            }
+            
+            // Regenerate shield energy very slowly when not in use
+            if (!shieldActive && shieldEnergy < 100) {
+                shieldEnergy = Math.min(100, shieldEnergy + 0.02);
+            }
+        }
+		// Draw everything
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = glitchColors.dark;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Apply screen shake if active
+            if (screenShakeIntensity > 0) {
+                ctx.save();
+                ctx.translate(
+                    (Math.random() * 2 - 1) * screenShakeIntensity,
+                    (Math.random() * 2 - 1) * screenShakeIntensity
+                );
+            }
+            
+            // Draw grid background
+            if (Math.random() < 0.99) { // Occasionally flicker the grid
+                ctx.strokeStyle = 'rgba(0, 255, 136, 0.1)';
+                ctx.lineWidth = 1;
+                
+                // Draw vertical lines
+                for (let x = 0; x < canvas.width; x += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                }
+                
+                // Draw horizontal lines
+                for (let y = 0; y < canvas.height; y += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw static noise overlay
+            if (staticNoiseLevel > 0) {
+                const noiseSize = 2; // Size of noise pixels
+                ctx.fillStyle = 'rgba(255, 255, 255, ' + staticNoiseLevel * 0.1 + ')';
+                
+                for (let x = 0; x < canvas.width; x += noiseSize) {
+                    for (let y = 0; y < canvas.height; y += noiseSize) {
+                        if (Math.random() < staticNoiseLevel) {
+                            ctx.fillRect(x, y, noiseSize, noiseSize);
+                        }
+                    }
+                }
+            }
+            
+            // Draw special attack effects
+            specialEffects.forEach(effect => {
+                // Random glitch in special effect
+                const glitchX = Math.random() < 0.1 * effect.glitchIntensity ? (Math.random() * 2 - 1) * 10 : 0;
+                const glitchY = Math.random() < 0.1 * effect.glitchIntensity ? (Math.random() * 2 - 1) * 10 : 0;
+                
+                // Create gradient for special attack wave with glitch aesthetic
+                const gradient = ctx.createRadialGradient(
+                    effect.x + glitchX, effect.y + glitchY, 0,
+                    effect.x + glitchX, effect.y + glitchY, effect.radius
+                );
+                
+                // Use a more digital/synthwave palette
+                const pulseRate = Math.sin(effect.currentFrame * effect.pulseRate) * 0.2 + 0.8;
+                gradient.addColorStop(0, 'rgba(255, 0, 255, 0.7)');
+                gradient.addColorStop(0.3, 'rgba(255, 0, 255, 0.5)');
+                gradient.addColorStop(0.7, 'rgba(255, 0, 255, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 0, 255, 0)');
+                
+                // Draw main effect circle
+                ctx.beginPath();
+                ctx.arc(effect.x + glitchX, effect.y + glitchY, effect.radius * pulseRate, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Draw digital distortion lines
+                const numLines = 24; // More lines for more detail
+                const lineLength = effect.radius * 0.95;
+                
+                ctx.strokeStyle = 'rgba(255, 0, 255, 0.7)';
+                ctx.lineWidth = 2;
+                
+                for (let i = 0; i < numLines; i++) {
+                    // Add occasional glitches to angles
+                    const glitchAngle = Math.random() < 0.05 ? Math.random() * 0.2 : 0;
+                    const angle = (i / numLines) * Math.PI * 2 + glitchAngle;
+                    
+                    // Some lines are broken/glitched
+                    if (Math.random() < 0.1) continue;
+                    
+                    // Start from a random distance from center for glitch effect
+                    const startDist = Math.random() < 0.2 ? Math.random() * effect.radius * 0.3 : 0;
+                    const endDist = Math.random() < 0.1 ? lineLength * (0.7 + Math.random() * 0.3) : lineLength;
+                    
+                    ctx.beginPath();
+                    
+                    if (Math.random() < 0.1) {
+                        // Some lines are zigzagged for digital effect
+                        ctx.moveTo(
+                            effect.x + Math.cos(angle) * startDist + glitchX,
+                            effect.y + Math.sin(angle) * startDist + glitchY
+                        );
+                        
+                        const midDist = startDist + (endDist - startDist) * 0.5;
+                        const jitter = Math.random() * 10 - 5;
+                        
+                        ctx.lineTo(
+                            effect.x + Math.cos(angle) * midDist + Math.cos(angle + Math.PI/2) * jitter + glitchX,
+                            effect.y + Math.sin(angle) * midDist + Math.sin(angle + Math.PI/2) * jitter + glitchY
+                        );
+                        
+                        ctx.lineTo(
+                            effect.x + Math.cos(angle) * endDist + glitchX,
+                            effect.y + Math.sin(angle) * endDist + glitchY
+                        );
+                    } else {
+                        // Normal lines
+                        ctx.moveTo(
+                            effect.x + Math.cos(angle) * startDist + glitchX,
+                            effect.y + Math.sin(angle) * startDist + glitchY
+                        );
+                        ctx.lineTo(
+                            effect.x + Math.cos(angle) * endDist + glitchX,
+                            effect.y + Math.sin(angle) * endDist + glitchY
+                        );
+                    }
+                    
+                    ctx.stroke();
+                }
+                
+                // Add scanlines effect
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(255, 0, 255, 0.3)';
+                
+                for (let y = Math.floor(effect.y - effect.radius); y < effect.y + effect.radius; y += 4) {
+                    ctx.beginPath();
+                    ctx.moveTo(effect.x - effect.radius, y);
+                    ctx.lineTo(effect.x + effect.radius, y);
+                    ctx.stroke();
+                }
+            });
+            
+            // Draw ship with glitch effect
+            if (!gameOver) {
+                if (!ship.invulnerable || Math.floor(Date.now() / 100) % 2) {
+                    // Determine ship color based on state
+                    if (ship.invulnerable) {
+                        ctx.strokeStyle = glitchColors.tertiary; // Cyan for invulnerable
+                        ctx.shadowColor = glitchColors.tertiary;
+                    } else {
+                        ctx.strokeStyle = glitchColors.primary; // Green normal color
+                        ctx.shadowColor = glitchColors.primary;
+                    }
+                    
+                    // Add glow effect
+                    ctx.shadowBlur = 5;
+                    ctx.lineWidth = 2;
+                    
+                    // Apply color shift for glitch effect
+                    if (colorShiftAmount > 0) {
+                        // Draw RGB shifted versions of the ship
+                        // Red shifted copy
+                        ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                        drawShipShape(ship.x + colorShiftAmount + ship.glitchOffset.x, ship.y + ship.glitchOffset.y);
+                        
+                        // Green shifted copy
+                        ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+                        drawShipShape(ship.x + ship.glitchOffset.x, ship.y + ship.glitchOffset.y);
+                        
+                        // Blue shifted copy
+                        ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';
+                        drawShipShape(ship.x - colorShiftAmount + ship.glitchOffset.x, ship.y + ship.glitchOffset.y);
+                    } else {
+                        // Draw normal ship
+                        drawShipShape(ship.x + ship.glitchOffset.x, ship.y + ship.glitchOffset.y);
+                    }
+                    
+                    // Reset shadow
+                    ctx.shadowBlur = 0;
+                    
+                    // Draw shield if active
+                    if (shieldActive) {
+                        ctx.beginPath();
+                        ctx.arc(ship.x, ship.y, shieldRadius, 0, Math.PI * 2);
+                        
+                        // Shield color based on energy level
+                        const shieldIntensity = shieldEnergy / 100;
+                        
+                        // Create a gradient for shield effect
+                        const gradient = ctx.createRadialGradient(
+                            ship.x, ship.y, shieldRadius * 0.7,
+                            ship.x, ship.y, shieldRadius
+                        );
+                        gradient.addColorStop(0, `rgba(0, 255, 136, 0.1)`);
+                        gradient.addColorStop(0.7, `rgba(0, 255, 136, 0.3)`);
+                        gradient.addColorStop(1, `rgba(0, 255, 136, 0.6)`);
+                        
+                        ctx.fillStyle = gradient;
+                        ctx.fill();
+                        
+                        // Add shield outline
+                        ctx.strokeStyle = glitchColors.primary;
+                        ctx.lineWidth = 2;
+                        ctx.shadowColor = glitchColors.primary;
+                        ctx.shadowBlur = 10;
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                        
+                        // Shield digital pulse effect
+                        const pulseSize = shieldRadius * (0.9 + Math.sin(Date.now() / 100) * 0.1);
+                        
+                        // Draw digital shield ring
+                        ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+                        ctx.lineWidth = 1;
+                        
+                        // Draw dashed circle for digital look
+                        ctx.beginPath();
+                        ctx.setLineDash([5, 5]); // Create dashed line
+                        ctx.arc(ship.x, ship.y, pulseSize, 0, Math.PI * 2);
+                        ctx.stroke();
+                        
+                        // Draw scanlines over shield
+                        for (let y = Math.floor(ship.y - shieldRadius); y < ship.y + shieldRadius; y += 3) {
+                            if (Math.pow(y - ship.y, 2) > Math.pow(shieldRadius, 2)) continue;
+                            
+                            const dx = Math.sqrt(Math.pow(shieldRadius, 2) - Math.pow(y - ship.y, 2));
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(ship.x - dx, y);
+                            ctx.lineTo(ship.x + dx, y);
+                            ctx.stroke();
+                        }
+                        
+                        // Reset line dash
+                        ctx.setLineDash([]);
+                    }
+                    
+                    // Enhanced engine effect when thrusting
+                    if (ship.thrusting) {
+                        // Base positions for the engine
+                        const engineX = ship.x - ship.radius * (2/3) * Math.cos(ship.angle);
+                        const engineY = ship.y + ship.radius * (2/3) * Math.sin(ship.angle);
+                        
+                        // Digital flame effect
+                        for (let i = 0; i < 3; i++) {
+                            // Flickering randomness
+                            const flicker = Math.random();
+                            const flameLength = ship.radius * (1.2 + Math.random() * 0.8);
+                            const flameWidth = ship.radius * 0.5;
+                            
+                            // Determine thrust color
+                            let thrustColor;
+                            if (ship.invulnerable) {
+                                thrustColor = glitchColors.tertiary; // Cyan for invulnerable
+                            } else if (shieldActive) {
+                                thrustColor = glitchColors.primary; // Green for shield active
+                            } else if (flicker < 0.3) {
+                                thrustColor = '#ff4'; // Yellow
+                            } else if (flicker < 0.6) {
+                                thrustColor = '#f84'; // Orange
+                            } else {
+                                thrustColor = '#f44'; // Red
+                            }
+                            
+                            // Add glow
+                            ctx.shadowColor = thrustColor;
+                            ctx.shadowBlur = 10;
+                            
+                            // Draw pixelated exhaust blocks for digital look
+                            const blocks = Math.floor(flameLength / 3);
+                            for (let j = 0; j < blocks; j++) {
+                                const distance = j * 3;
+                                const width = flameWidth * (1 - j/blocks) * 1.2;
+                                
+                                if (Math.random() < 0.8) { // Some blocks missing for glitch effect
+                                    ctx.fillStyle = thrustColor;
+                                    ctx.fillRect(
+                                        engineX - distance * Math.cos(ship.angle) - width/2,
+                                        engineY + distance * Math.sin(ship.angle) - width/2,
+                                        width, width
+                                    );
+                                }
+                            }
+                            
+                            // Reset shadow
+                            ctx.shadowBlur = 0;
+                        }
+                    }
+                }
+            }
+            
+            // Helper function to draw ship shape
+            function drawShipShape(x, y) {
+                ctx.beginPath();
+                // Draw triangular ship
+                const shipX = x + ship.radius * 4/3 * Math.cos(ship.angle);
+                const shipY = y - ship.radius * 4/3 * Math.sin(ship.angle);
+                ctx.moveTo(shipX, shipY);
+                ctx.lineTo(
+                    x - ship.radius * (2/3) * Math.cos(ship.angle) + ship.radius * Math.cos(ship.angle + Math.PI/2),
+                    y + ship.radius * (2/3) * Math.sin(ship.angle) - ship.radius * Math.sin(ship.angle + Math.PI/2)
+                );
+                ctx.lineTo(
+                    x - ship.radius * (2/3) * Math.cos(ship.angle) + ship.radius * Math.cos(ship.angle - Math.PI/2),
+                    y + ship.radius * (2/3) * Math.sin(ship.angle) - ship.radius * Math.sin(ship.angle - Math.PI/2)
+                );
+                ctx.closePath();
+                ctx.stroke();
+            }
+            
+            // Draw shield energy bar
+            const barWidth = 150;
+            const barHeight = 10;
+            const barX = canvas.width - barWidth - 10;
+            const barY = 70;
+            
+            // Background bar with glitch effect
+            const barGlitchX = Math.random() < 0.1 * glitchIntensity ? (Math.random() * 2 - 1) * 3 : 0;
+            const barGlitchY = Math.random() < 0.1 * glitchIntensity ? (Math.random() * 2 - 1) * 3 : 0;
+            
+            ctx.fillStyle = '#111';
+            ctx.fillRect(barX + barGlitchX, barY + barGlitchY, barWidth, barHeight);
+            
+            // Energy level
+            const energyWidth = barWidth * (shieldEnergy / 100);
+            
+            // Color for shield bar
+            ctx.fillStyle = glitchColors.tertiary;
+            ctx.shadowColor = glitchColors.tertiary;
+            ctx.shadowBlur = 5;
+            ctx.fillRect(barX + barGlitchX, barY + barGlitchY, energyWidth, barHeight);
+            
+            // Bar border
+            ctx.strokeStyle = glitchColors.tertiary;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(barX + barGlitchX, barY + barGlitchY, barWidth, barHeight);
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+            
+            // Draw weapon level bar if applicable
+            if (weaponLevel > 1) {
+                // Get color based on weapon level
+                const weaponColor = getWeaponColor(weaponLevel);
+                
+                // Draw weapon timer bar
+                if (weaponTimer > 0) {
+                    // Draw at top left instead of below shield bar
+                    const weaponBarX = 10;
+                    const weaponBarY = 40; // Below score
+                    
+                    ctx.fillStyle = '#111';
+                    ctx.fillRect(weaponBarX, weaponBarY, barWidth, barHeight);
+                    
+                    const timerRatio = weaponTimer / 600; // 600 is max timer
+                    
+                    // Add glow effect
+                    ctx.shadowColor = weaponColor;
+                    ctx.shadowBlur = 5;
+                    
+                    ctx.fillStyle = weaponColor;
+                    ctx.fillRect(weaponBarX, weaponBarY, barWidth * timerRatio, barHeight);
+                    
+                    // Bar border
+                    ctx.strokeStyle = weaponColor;
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(weaponBarX, weaponBarY, barWidth, barHeight);
+                    
+                    // Reset shadow
+                    ctx.shadowBlur = 0;
+                    
+                    // Label with glow effect
+                    ctx.fillStyle = weaponColor;
+                    ctx.shadowColor = weaponColor;
+                    ctx.shadowBlur = 3;
+                    ctx.font = '12px "Courier New", monospace';
+                    ctx.fillText(`WEAPON LVL: ${weaponLevel}`, weaponBarX, weaponBarY - 5);
+                    ctx.shadowBlur = 0;
+                }
+            }
+            
+            // Draw asteroids with enhanced shifting fill colors and glitchy shapes
+            asteroids.forEach(asteroid => {
+                // Apply glitch effect based on asteroid properties
+                const x = asteroid.x + asteroid.glitchOffset.x;
+                const y = asteroid.y + asteroid.glitchOffset.y;
+                
+                // Get vertices with noise for rendering
+                let vertices = [];
+                if (asteroid.preCalculatedVertices && asteroid.preCalculatedVertices.length > 0) {
+                    // Generate vertices with noise that shift over time
+                    for (let i = 0; i < asteroid.preCalculatedVertices.length; i++) {
+                        const vert = asteroid.preCalculatedVertices[i];
+                        // Apply noise based on jitter value and time
+                        const noise = vert.jitter * Math.sin(Date.now() * 0.001 + vert.angle * 3) * asteroid.noiseEdgeAmount;
+                        vertices.push({
+                            x: x + vert.offsetX + noise * asteroid.radius * Math.cos(vert.angle), 
+                            y: y + vert.offsetY + noise * asteroid.radius * Math.sin(vert.angle)
+                        });
+                    }
+                } else {
+                    // Fallback if no pre-calculated vertices (shouldn't happen with new implementation)
+                    for (let i = 0; i < asteroid.vertices; i++) {
+                        const angle = i * Math.PI * 2 / asteroid.vertices;
+                        const vertexOffset = asteroid.vertexOffsets[i % asteroid.vertexOffsets.length];
+                        const jag = asteroid.radius * (1 - asteroid.jaggedness + Math.random() * asteroid.jaggedness);
+                        
+                        vertices.push({
+                            x: x + (jag + jag * vertexOffset) * Math.cos(angle),
+                            y: y + (jag + jag * vertexOffset) * Math.sin(angle)
+                        });
+                    }
+                }
+                
+                // Create a shifting/glitchy fill color based on time
+                let currentFillColor = asteroid.fillColor;
+                // Apply color shift based on time for a pulsing/shifting effect
+                const colorPhase = Math.sin(asteroid.colorShiftTime);
+                const alphaShift = (0.05 * colorPhase * asteroid.colorShiftAmount) + asteroid.fillAlpha;
+                
+                // Draw the asteroid with occasional color shifting
+                if (asteroid.colorShift > 0 || colorShiftAmount > 0) {
+                    // RGB shifted versions for glitch effect
+                    const shiftAmount = asteroid.colorShift + colorShiftAmount;
+                    
+                    // Red copy
+                    ctx.strokeStyle = 'rgba(255, 50, 50, 0.5)';
+                    drawAsteroidShape(vertices, x + shiftAmount, y, asteroid, currentFillColor, alphaShift);
+                    
+                    // Green copy
+                    ctx.strokeStyle = 'rgba(50, 255, 50, 0.5)';
+                    drawAsteroidShape(vertices, x, y, asteroid, currentFillColor, alphaShift);
+                    
+                    // Blue copy
+                    ctx.strokeStyle = 'rgba(50, 50, 255, 0.5)';
+                    drawAsteroidShape(vertices, x - shiftAmount, y, asteroid, currentFillColor, alphaShift);
+                } else {
+                    // Normal asteroid
+                    if (asteroid.health < asteroid.maxHealth) {
+                        // Damaged asteroid - add a glitch tint
+                        ctx.strokeStyle = '#f55';
+                        ctx.shadowColor = '#f55';
+                        ctx.fillStyle = `rgba(${currentFillColor}, ${alphaShift + 0.05})`; // Slightly brighter when damaged
+                    } else {
+                        ctx.strokeStyle = 'rgba(0, 255, 136, 0.7)';
+                        ctx.shadowColor = 'rgba(0, 255, 136, 0.7)';
+                        ctx.fillStyle = `rgba(${currentFillColor}, ${alphaShift})`;
+                    }
+                    
+                    // Add glow effect
+                    ctx.shadowBlur = 3;
+                    ctx.lineWidth = 2;
+                    
+                    // Draw the asteroid shape with vertices
+                    drawAsteroidShape(vertices, x, y, asteroid, currentFillColor, alphaShift);
+                    
+                    // Reset shadow
+                    ctx.shadowBlur = 0;
+                }
+                
+                // Draw health indicator for all asteroids that have taken damage
+                if (asteroid.health < asteroid.maxHealth) {
+                    // Draw health bar above asteroid
+                    const healthBarWidth = asteroid.radius * 1.5;
+                    const healthBarHeight = 4;
+                    const healthBarX = x - healthBarWidth / 2;
+                    const healthBarY = y - asteroid.radius - 10;
+                    
+                    // Background
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+                    
+                    // Health amount
+                    const healthRatio = asteroid.health / asteroid.maxHealth;
+                    ctx.fillStyle = healthRatio > 0.6 ? '#0f8' : (healthRatio > 0.3 ? '#ff0' : '#f00');
+                    ctx.fillRect(healthBarX, healthBarY, healthBarWidth * healthRatio, healthBarHeight);
+                    
+                    // Border
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+                    
+                    // Display numeric health for large asteroids
+                    if (asteroid.size >= 2) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '10px "Courier New", monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`${asteroid.health}/${asteroid.maxHealth}`, x, healthBarY + healthBarHeight + 10);
+                        ctx.textAlign = 'left';
+                    }
+                }
+            });
+            
+            // Helper function to draw asteroid shape with glitchy fill patterns
+            function drawAsteroidShape(vertices, x, y, asteroid, fillColor, alphaShift) {
+                if (vertices.length < 3) return; // Need at least 3 vertices to draw a shape
+                
+                ctx.beginPath();
+                
+                // Draw the asteroid shape using provided vertices
+                ctx.moveTo(vertices[0].x, vertices[0].y);
+                
+                for (let i = 1; i < vertices.length; i++) {
+                    ctx.lineTo(vertices[i].x, vertices[i].y);
+                }
+                
+                ctx.closePath();
+                
+                // Apply color with shifting effect based on time
+                ctx.fillStyle = `rgba(${fillColor}, ${alphaShift})`;
+                
+                // Fill the asteroid with pattern based on fillPattern type
+                switch(asteroid.fillPattern) {
+                    case 0: // Grid pattern with color shifting
+                        ctx.fill(); // Base fill
+                        
+                        // Add grid lines with color shifting
+                        const oldStroke = ctx.strokeStyle;
+                        // Make grid lines slightly brighter
+                        ctx.strokeStyle = `rgba(${fillColor}, ${alphaShift + 0.2})`;
+                        
+                        // Horizontal lines
+                        for (let i = -asteroid.radius; i <= asteroid.radius; i += 10) {
+                            if (Math.abs(i) < asteroid.radius * 0.9) {
+                                ctx.beginPath();
+                                ctx.moveTo(x - Math.sqrt(asteroid.radius * asteroid.radius - i * i), y + i);
+                                ctx.lineTo(x + Math.sqrt(asteroid.radius * asteroid.radius - i * i), y + i);
+                                ctx.stroke();
+                            }
+                        }
+                        
+                        // Vertical lines 
+                        for (let i = -asteroid.radius; i <= asteroid.radius; i += 10) {
+                            if (Math.abs(i) < asteroid.radius * 0.9) {
+                                ctx.beginPath();
+                                ctx.moveTo(x + i, y - Math.sqrt(asteroid.radius * asteroid.radius - i * i));
+                                ctx.lineTo(x + i, y + Math.sqrt(asteroid.radius * asteroid.radius - i * i));
+                                ctx.stroke();
+                            }
+                        }
+                        
+                        // Restore original stroke
+                        ctx.strokeStyle = oldStroke;
+                        break;
+                        
+                    case 1: // Scanline pattern with color shifting
+                        ctx.fill(); // Base fill
+                        
+                        // Add scanlines with color shifting
+                        const oldScanStroke = ctx.strokeStyle;
+                        // Make scanlines slightly brighter
+                        ctx.strokeStyle = `rgba(${fillColor}, ${alphaShift + 0.2})`;
+                        
+                        for (let i = -asteroid.radius; i <= asteroid.radius; i += 5) {
+                            if (Math.abs(i) < asteroid.radius * 0.9) {
+                                ctx.beginPath();
+                                ctx.moveTo(x - Math.sqrt(asteroid.radius * asteroid.radius - i * i), y + i);
+                                ctx.lineTo(x + Math.sqrt(asteroid.radius * asteroid.radius - i * i), y + i);
+                                ctx.stroke();
+                            }
+                        }
+                        
+                        ctx.strokeStyle = oldScanStroke;
+                        break;
+                        
+                    case 2: // Noise pattern with color shifting
+                        ctx.fill(); // Base fill
+                        
+                        // Add static noise inside the asteroid with color shifting
+                        ctx.save();
+                        ctx.clip(); // Clip to the asteroid shape
+                        
+                        const noiseSize = 2;
+                        // Noise with color shifting
+                        ctx.fillStyle = `rgba(${fillColor}, ${alphaShift + 0.3})`;
+                        
+                        for (let nx = x - asteroid.radius; nx < x + asteroid.radius; nx += noiseSize) {
+                            for (let ny = y - asteroid.radius; ny < y + asteroid.radius; ny += noiseSize) {
+                                if (Math.random() < 0.2) {
+                                    ctx.fillRect(nx, ny, noiseSize, noiseSize);
+                                }
+                            }
+                        }
+                        
+                        ctx.restore();
+                        break;
+                        
+                    default:
+                        // Simple fill
+                        ctx.fill();
+                }
+                
+                // Add inner glow if enabled with color shifting
+                if (asteroid.innerGlow) {
+                    const gradient = ctx.createRadialGradient(
+                        x, y, 0,
+                        x, y, asteroid.radius
+                    );
+                    
+                    // Use appropriate color based on asteroid state with glitch effect
+                    const glowColorBase = asteroid.health < asteroid.maxHealth ? 
+                        `rgba(255, 85, 85, ` : 
+                        `rgba(${fillColor}, `;
+                    
+                    // Shifting glow effect
+                    const glowIntensity = 0.2 + 0.05 * Math.sin(asteroid.colorShiftTime * 3);
+                    
+                    gradient.addColorStop(0, glowColorBase + `${glowIntensity})`);
+                    gradient.addColorStop(0.7, glowColorBase + `${glowIntensity/4})`);
+                    gradient.addColorStop(1, glowColorBase + '0)');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+                
+                // Draw the stroke last to ensure it's visible
+                ctx.stroke();
+            }
+			// Draw bullets
+            bullets.forEach(bullet => {
+                // Get color for the bullet with glow effect
+                ctx.fillStyle = bullet.color;
+                ctx.shadowColor = bullet.color;
+                ctx.shadowBlur = 5;
+                
+                if (bullet.pixelated) {
+                    // Draw as a square for pixelated look
+                    const size = bullet.radius * 2;
+                    
+                    // Apply glitch offset if exists
+                    const offsetX = bullet.glitchOffset ? bullet.glitchOffset.x : 0;
+                    const offsetY = bullet.glitchOffset ? bullet.glitchOffset.y : 0;
+                    
+                    ctx.fillRect(
+                        bullet.x - bullet.radius + offsetX,
+                        bullet.y - bullet.radius + offsetY,
+                        size, size
+                    );
+                } else {
+                    // Draw as a circle
+                    ctx.beginPath();
+                    ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Reset shadow
+                ctx.shadowBlur = 0;
+                
+                // Add trailing effect for higher power bullets
+                if (bullet.power > 1) {
+                    ctx.globalAlpha = 0.5;
+                    if (bullet.pixelated) {
+                        const trailSize = bullet.radius * 1.6;
+                        ctx.fillRect(
+                            bullet.x - bullet.xv * 0.3 - trailSize/2,
+                            bullet.y - bullet.yv * 0.3 - trailSize/2,
+                            trailSize, trailSize
+                        );
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(bullet.x - bullet.xv * 0.3, bullet.y - bullet.yv * 0.3, bullet.radius * 0.8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.globalAlpha = 1.0;
+                }
+            });
+            
+            // Draw particles with pixelated look
+            particles.forEach(particle => {
+                ctx.fillStyle = particle.color;
+                
+                if (particle.isDigital) {
+                    // Digital looking particles (rectangles with varying opacity)
+                    ctx.globalAlpha = particle.alpha || 0.7;
+                    
+                    // Random flickering
+                    if (Math.random() < 0.2) {
+                        ctx.fillRect(
+                            particle.x, 
+                            particle.y, 
+                            particle.width, 
+                            particle.height
+                        );
+                    }
+                    
+                    ctx.globalAlpha = 1.0;
+                } else if (particle.isSquare) {
+                    // Square particles for more pixelated look
+                    const size = particle.radius * (particle.life / 60) * particle.pixelSize;
+                    
+                    // Apply glitch offset if exists
+                    const offsetX = particle.glitchOffset ? particle.glitchOffset.x : 0;
+                    const offsetY = particle.glitchOffset ? particle.glitchOffset.y : 0;
+                    
+                    ctx.fillRect(
+                        particle.x - size/2 + offsetX,
+                        particle.y - size/2 + offsetY,
+                        size, size
+                    );
+                } else {
+                    // Regular circular particles
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.radius * (particle.life / 60), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Draw powerups with digital/glitch aesthetics
+            powerups.forEach(powerup => {
+                // Pulse effect
+                const pulseScale = 1 + Math.sin(powerup.pulseTime * 0.1) * 0.2;
+                const x = powerup.x + powerup.glitchOffset.x;
+                const y = powerup.y + powerup.glitchOffset.y;
+                
+                // Draw outer circle
+                ctx.beginPath();
+                if (powerup.type === 'weapon') {
+                    // Weapon upgrade (yellow glow)
+                    ctx.fillStyle = glitchColors.highlight;
+                    ctx.shadowColor = glitchColors.highlight;
+                } else if (powerup.type === 'energy') {
+                    // Energy upgrade (green glow)
+                    ctx.fillStyle = glitchColors.primary;
+                    ctx.shadowColor = glitchColors.primary;
+                }
+                
+                // Add glow effect
+                ctx.shadowBlur = 10;
+                
+                // Draw as a square for pixelated look
+                const size = powerup.radius * 2 * pulseScale;
+                ctx.fillRect(x - size/2, y - size/2, size, size);
+                
+                // Reset shadow
+                ctx.shadowBlur = 0;
+                
+                // Draw scanlines across powerup
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.lineWidth = 1;
+                
+                for (let i = 0; i < 5; i++) {
+                    const scanY = y - powerup.radius + i * (powerup.radius * 2) / 4 + powerup.scanlineOffset % 5;
+                    if (scanY > y - powerup.radius && scanY < y + powerup.radius) {
+                        ctx.beginPath();
+                        ctx.moveTo(x - powerup.radius, scanY);
+                        ctx.lineTo(x + powerup.radius, scanY);
+                        ctx.stroke();
+                    }
+                }
+                
+                // Add icon
+                ctx.fillStyle = glitchColors.dark;
+                ctx.font = 'bold 14px "Courier New", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Choose letter based on powerup type
+                let icon;
+                if (powerup.type === 'weapon') {
+                    icon = 'W';
+                } else if (powerup.type === 'energy') {
+                    icon = 'E';
+                }
+                
+                ctx.fillText(icon, x, y);
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+            });
+            
+            // Draw level indicator
+            ctx.fillStyle = glitchColors.primary;
+            ctx.shadowColor = glitchColors.primary;
+            ctx.shadowBlur = 5;
+            ctx.font = '16px "Courier New", monospace';
+            ctx.fillText(`LEVEL: ${level}`, 10, canvas.height - 10);
+            
+            // Display asteroid speed and health scaling
+            displayAsteroidSpeed();
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+            
+            // Draw floating texts with glitch aesthetics
+            floatingTexts.forEach(text => {
+                ctx.globalAlpha = text.alpha;
+                ctx.fillStyle = text.color || glitchColors.light;
+                ctx.shadowColor = text.color || glitchColors.light;
+                ctx.shadowBlur = 5;
+                ctx.font = `bold ${text.size || 18}px "Courier New", monospace`;
+                ctx.textAlign = 'center';
+                
+                // Apply glitch offset
+                const glitchX = text.glitchOffset ? text.glitchOffset.x : 0;
+                const glitchY = text.glitchOffset ? text.glitchOffset.y : 0;
+                
+                // Sometimes draw RGB shifted text for digital glitch look
+                if (Math.random() < 0.1 * text.glitchIntensity) {
+                    const shiftAmount = 2 + Math.random() * 3;
+                    
+                    // Red copy
+                    ctx.fillStyle = 'rgba(255, 50, 50, ' + text.alpha * 0.7 + ')';
+                    ctx.fillText(text.text, text.x + shiftAmount + glitchX, text.y + glitchY);
+                    
+                    // Green copy
+                    ctx.fillStyle = 'rgba(50, 255, 50, ' + text.alpha * 0.7 + ')';
+                    ctx.fillText(text.text, text.x + glitchX, text.y + glitchY);
+                    
+                    // Blue copy
+                    ctx.fillStyle = 'rgba(50, 50, 255, ' + text.alpha * 0.7 + ')';
+                    ctx.fillText(text.text, text.x - shiftAmount + glitchX, text.y + glitchY);
+                } else {
+                    // Normal text
+                    ctx.fillText(text.text, text.x + glitchX, text.y + glitchY);
+                }
+                
+                ctx.textAlign = 'left';
+                ctx.globalAlpha = 1.0;
+                ctx.shadowBlur = 0;
+            });
+            
+            // Reset any transformations like screen shake
+            if (screenShakeIntensity > 0) {
+                ctx.restore();
+            }
+            
+            // Occasionally add full-screen glitch line
+            if (Math.random() < 0.01 * glitchIntensity) {
+                const lineY = Math.random() * canvas.height;
+                const lineHeight = 1 + Math.floor(Math.random() * 3);
+                const lineShift = Math.random() * 10 * glitchIntensity;
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(0, lineY, canvas.width, lineHeight);
+                
+                // Shift part of the line for a "tearing" effect
+                const imageData = ctx.getImageData(0, lineY, canvas.width, lineHeight);
+                ctx.putImageData(imageData, lineShift, lineY);
+            }
+            
+            // Display current weapon damage info when weapon level is above 1
+            if (weaponLevel > 1) {
+                const damage = calculateWeaponDamage(weaponLevel);
+                ctx.fillStyle = getWeaponColor(weaponLevel);
+                ctx.font = '12px "Courier New", monospace';
+                ctx.fillText(`Weapon Damage: ${damage}`, 10, canvas.height - 70);
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        loadHighScores();
+        resetGame();
+    </script>
+</body>
+</html>
