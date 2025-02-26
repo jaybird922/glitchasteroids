@@ -75,10 +75,58 @@
     </div>
     
     <script>
+        // Get reference to the iframe
+        const gameFrame = document.getElementById('game-frame');
+        
         // Handle any iframe loading errors by redirecting directly to the game file
-        document.getElementById('game-frame').onerror = function() {
+        gameFrame.onerror = function() {
             window.location.href = 'glitchasteroids.html';
         };
+        
+        // Focus the iframe when it's loaded
+        gameFrame.onload = function() {
+            gameFrame.focus();
+            
+            // Try to focus the iframe content window if possible
+            try {
+                gameFrame.contentWindow.focus();
+            } catch (e) {
+                console.log("Could not auto-focus game due to cross-origin restrictions");
+            }
+            
+            // Alternative approach - tell users to click if focus doesn't work automatically
+            // Add a message that fades out after a few seconds
+            const focusMessage = document.createElement('div');
+            focusMessage.innerHTML = "Click once if controls don't respond";
+            focusMessage.style.position = "fixed";
+            focusMessage.style.bottom = "10px";
+            focusMessage.style.left = "50%";
+            focusMessage.style.transform = "translateX(-50%)";
+            focusMessage.style.color = "#0f8";
+            focusMessage.style.textShadow = "0 0 5px #0f8";
+            focusMessage.style.padding = "10px";
+            focusMessage.style.zIndex = "1000";
+            focusMessage.style.opacity = "1";
+            focusMessage.style.transition = "opacity 1s ease-in";
+            document.body.appendChild(focusMessage);
+            
+            // Fade out message after 5 seconds
+            setTimeout(function() {
+                focusMessage.style.opacity = "0";
+                setTimeout(function() {
+                    focusMessage.remove();
+                }, 1000);
+            }, 5000);
+        };
+
+        // Another technique: focus on first user interaction with the page
+        document.body.addEventListener('click', function() {
+            try {
+                gameFrame.contentWindow.focus();
+            } catch (e) {
+                console.log("Could not focus game after click");
+            }
+        }, { once: true });
     </script>
 </body>
 </html>
